@@ -1,0 +1,373 @@
+.\" Copyright (c) 2010 The FreeBSD Foundation
+.\" Copyright (c) 2010 Pawel Jakub Dawidek <pjd@FreeBSD.org>
+.\" Copyright (c) 2010 Mikolaj Golub <to.my.trociny@gmail.com>
+.\" All rights reserved.
+.\"
+.\" This software was developed by Pawel Jakub Dawidek under sponsorship from
+.\" the FreeBSD Foundation.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $FreeBSD$
+.\"
+.Dd September 1, 2010
+.Dt HASTMON.CONF 5
+.Os
+.Sh NAME
+.Nm hastmon.conf
+.Nd configuration file for the
+.Xr hastmon 8
+deamon and the
+.Xr hastmonctl 8
+utility.
+.Sh DESCRIPTION
+The
+.Nm
+file is used by both
+.Xr hastmon 8
+daemon
+and
+.Xr hastmonctl 8
+control utility.
+Configuration file is designed in a way that exactly the same file can be
+(and should be) used on all nodes.
+Every line starting with # is treated as comment and ignored.
+.Sh CONFIGURATION FILE SYNTAX
+General syntax of the
+.Nm
+file is following:
+.Bd -literal -offset indent
+# Global section
+control <addr>
+listen <addr>
+timeout <seconds>
+priority <number>
+attempts <number>
+heartbeat_interval <seconds>
+complaint_count <number>
+complaint_interval <seconds>
+exec <path>
+
+on <node> {
+	# Node section
+        control <addr>
+        listen <addr>
+        priority <number>
+	attempts <number>
+        heartbeat_interval <seconds>
+        complaint_count <number>
+        complaint_interval <seconds>
+}
+
+on <node> {
+	# Node section
+        control <addr>
+        listen <addr>
+        priority <number>
+        attempts <number>
+	heartbeat_interval <seconds>
+        complaint_count <number>
+        complaint_interval <seconds>
+}
+
+resource <name> {
+	# Resource section
+	rc <path>
+	exec <path>
+	timeout <seconds>
+        attempts <number>
+        heartbeat_interval <seconds>
+        complaint_count <number>
+        complaint_interval <seconds>
+
+	on <node> {
+		# Resource-node section
+		# Required
+		rc <path>
+		# Required
+		remote <addr>
+                priority <number>
+                attempts <number>
+                heartbeat_interval <seconds>
+                complaint_count <number>
+                complaint_interval <seconds>
+	}
+	on <node> {
+		# Resource-node section
+		# Required
+		rc <path>
+		# Required
+		remote <addr>
+                priority <number>
+                attempts <number>
+                heartbeat_interval <seconds>
+                complaint_count <number>
+                complaint_interval <seconds>
+	}
+}
+.Ed
+.Pp
+Most of the various available configuration parameters are optional.
+If parameter is not defined in the particular section, it will be
+inherited from the parent section.
+For example, if the
+.Ic listen
+parameter is not defined in the node section, it will be inherited from
+the global section.
+If the global section does not define the
+.Ic listen
+parameter at all, the default value will be used.
+.Sh CONFIGURATION FILE DESCRIPTION
+The
+.Aq node
+argument can be replaced either by a full hostname as obtained by
+.Xr gethostname 3 ,
+only first part of the hostname, or by node's UUID as found in the
+.Va kern.hostuuid
+.Xr sysctl 8
+variable.
+.Pp
+The following statements are available:
+.Bl -tag -width ".Ic xxxx"
+.It Ic attempts Aq number
+.Pp
+Nubber of attempt to start resource before giving up.
+The default value is
+.Va 3 .
+.It Ic complaint_count Aq number
+.Pp
+Number of complaints secondary should receive before initiating failovering.
+The default value is
+.Va 5 .
+.It Ic complaint_interval Aq seconds
+.Pp
+Conplaint's life time in seconds.
+Complaints older this interval are expired and not taken into
+consideration.
+The default value is
+.Va 60 .
+.It Ic control Aq addr
+.Pp
+Address for communication with
+.Xr hastmonctl 8 .
+Each of the following examples defines the same control address:
+.Bd -literal -offset indent
+uds:///var/run/hastmonctl
+unix:///var/run/hastmonctl
+/var/run/hastmonctl
+.Ed
+.Pp
+The default value is
+.Pa uds:///var/run/hastmonctl .
+.It Ic friends Aq addr ...
+.Pp
+List of addresses (separated by space) of hosts that can connect to
+the node.
+Format is the same as for the
+.Ic listen
+statement.
+.It Ic exec Aq path
+.Pp
+Execute the given program on various events and to check resource status.
+Below is the list of currently implemented events and arguments the given
+program is executed with:
+.Bl -tag -width ".Ic xxxx"
+.It Ic "<path> start <resource>"
+.Pp
+Executed on primary node to start resource.
+.Pp
+.It Ic "<path> stop <resource>"
+.Pp
+Executed on both primary and secondary nodes to stop resource.
+.Pp
+.It Ic "<path> status <resource>"
+.Pp
+Executed on both primary and secondary nodes to check resource status.
+.Pp
+The script should return 0 as an exit status if the resource is
+running and is OK, 1 if the resource is not running and some other
+value if the resource is in unknown state.
+.It Ic "<path> role <resource> <oldrole> <newrole>"
+.Pp
+Executed on both primary and secondary nodes when resource role is changed.
+.Pp
+.It Ic "<path> connect <resource>"
+.Pp
+Executed on both primary and secondary nodes when connection for the given
+resource between the nodes is established.
+.Pp
+.It Ic "<path> disconnect <resource>"
+.Pp
+Executed on both primary and secondary nodes when connection for the given
+resource between the nodes is lost.
+.Pp
+.El
+The
+.Aq path
+argument should contain full path to executable program.
+If the given program exits with code different than
+.Va 0 ,
+.Nm hastmon
+will log it as an error.
+.Pp
+The
+.Aq resource
+argument is resource name from the configuration file.
+.Pp
+The
+.Aq oldrole
+argument is previous resource role (before the change).
+It can be one of:
+.Ar init ,
+.Ar secondary ,
+.Ar primary .
+.Pp
+The
+.Aq newrole
+argument is current resource role (after the change).
+It can be one of:
+.Ar init ,
+.Ar secondary ,
+.Ar primary .
+.Pp
+.It Ic heartbeat_interval Aq seconds
+.Pp
+Interval between heartbeats (checks) in seconds.
+The default value is
+.Va 10 .
+.It Ic listen Aq addr
+.Pp
+Address to listen on in form of:
+.Bd -literal -offset indent
+protocol://protocol-specific-address
+.Ed
+.Pp
+Each of the following examples defines the same listen address:
+.Bd -literal -offset indent
+0.0.0.0
+0.0.0.0:8458
+tcp://0.0.0.0
+tcp://0.0.0.0:8458
+tcp4://0.0.0.0
+tcp4://0.0.0.0:8458
+.Ed
+.Pp
+The default value is
+.Pa tcp4://0.0.0.0:8458 .
+.It Ic timeout Aq seconds
+.Pp
+Connection timeout in seconds.
+The default value is
+.Va 5 .
+.It Ic priority Aq number
+.Pp
+Node's priority (the lower number the higher priority).
+Priority is used when several primaries are started (e.g. after previous
+primary died) to negotiate who will be primary and who has to
+switch to secondary.
+The default value is.
+.Va 100 .
+.It Ic remote Aq addr ...
+.Pp
+Addresses of the remote
+.Nm hastmon
+daemons (separated by space).
+Format is the same as for the
+.Ic listen
+statement.
+When operating as a primary node these addresses will be used to connect to
+the secondary nodes.
+When operating as a secondary node only connections from these addresses
+will be accepted.
+When operating as a watchdog node these addresses will be used to
+check resource status on the nodes and send complaints.
++ .Pp
++ A special value of
++ .Va none
++ can be used when the remote address is not yet known (eg. the other node is not
++ set up yet).
+.El
+.Sh FILES
+.Bl -tag -width ".Pa /var/run/hastmonctl" -compact
+.It Pa /etc/hastmon.conf
+The default
+.Nm
+configuration file.
+.It Pa /var/run/hastmonctl
+Control socket used by the
+.Xr hastctl 8
+control utility to communicate with the
+.Xr hastmon 8
+daemon.
+.El
+.Sh EXAMPLES
+The example configuration file can look as follows:
+.Bd -literal -offset indent
+# host1 and host2 run hast resource. Watchdog is run on host3. 
+resource hast {
+	exec /usr/local/etc/rc.d/hast
+
+	on host1 {
+		friends tcp4://host3
+		remote tcp4://host2
+		priority 1
+	}
+	on host2 {
+		friends tcp4://host3
+		remote tcp4://host1
+		priority 2
+	}
+	on host3 {
+		remote tcp4://host1 tcp4://host2
+	}
+}
+
+# host1, host2 and host3 run mail resource.
+# Watchdog is run on host4 and host5. 
+resource mail {
+	friends tcp4://10.0.0.4 tcp4://10.0.0.5
+	exec /usr/local/etc/rc.d/mail
+
+	on host1 {
+		remote tcp4://10.0.0.2 tcp4://10.0.0.3
+		priority 1
+	}
+	on host2 {
+		remote tcp4://10.0.0.1 tcp4://10.0.0.3
+		priority 2
+	}
+	on host3 {
+		remote tcp4://10.0.0.1 tcp4://10.0.0.2
+		priority 3
+	}
+	on host4 {
+		remote tcp4://10.0.0.1 tcp4://10.0.0.2 tcp4://10.0.0.3
+	}
+	on host5 {
+		remote tcp4://10.0.0.1 tcp4://10.0.0.2 tcp4://10.0.0.3
+	}
+}
+.Ed
+.Sh SEE ALSO
+.Xr gethostname 3 ,
+.Xr hastmonctl 8 ,
+.Xr hastmon 8 .
