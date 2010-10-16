@@ -1,4 +1,5 @@
 #summary HASTMON -- cluster monitoring daemon.
+#labels Featured
 
 = Introduction. =
 
