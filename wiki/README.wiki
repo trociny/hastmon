@@ -1,0 +1,275 @@
+#summary HASTMON -- cluster monitoring daemon.
+
+= Introduction. =
+
+HASTMON is a monitoring daemon that allows a couple of hosts to run a
+service providing automatic failover. Those machines will be called a
+cluster and each machine is one cluster node. HASTMON is designed for
+clusters that work in Primary-Secondary configuration, which means
+that only one of the cluster nodes can be active at any given
+time. Active node will be called Primary node. This is the node that
+will run the service. Other nodes will be running as Secondary
+ensuring that the service is not started there. There should be also
+at least one node acting as a watchdog -- it checks periodically
+status of all nodes and sends complaints to Secondary nodes if Primary
+is not available. Secondary node makes decision to change its role to
+Primary when two conditions fulfil: there is no connection from
+primary and there are complaints from watchdog.
+
+Most of the HASTMON's code was taken from FreeBSD HAST project
+(http://wiki.freebsd.org/HAST) and it was developed as a monitoring
+daemon for HAST cluster but can be used for other setups.
+
+This software is being developed and tested under FreeBSD. The work is
+in progress. There should not be serious issues with porting to other
+Unixes, though.
+
+= Installation. =
+
+To build and install under FreeBSD:
+
+{{{
+  make
+  make install
+}}}
+
+= Configuration. =
+
+There should be at least 3 nodes: two that run the service and acting
+as Primary-Secondary and one is Watchdog node. Configuration for the
+nodes is stored in /etc/hastmon.conf file, which is designed in a way
+that exactly the same file can be (and should be) used on all nodes.
+HASTMON can monitor several resources. For every resource the script
+should be provided that will be used to start/stop the resource and
+check its status. See hastmon.conf(5) and Examples section below how
+to write the configuration file and rc script.
+
+After the nodes are started their role is set up using hastmonctl
+utility. This utility is also used to check current status of the
+cluster.
+
+= Examples. =
+
+In this example two resources will be set up -- one is some
+application/daemon that may run only on one server and another is HAST
+cluster that provides NFS storage.
+
+The cluster is run on three nodes: lolek, bolek -- running the service
+and acting as Primary-Secondary, and reksio -- acting as Watchdog.
+
+Configuration file /etc/hastmon.conf is the same on all nodes:
+{{{
+complaint_count 3
+complaint_interval 120
+
+resource storage {
+        exec /etc/storage.sh
+        friends lolek bolek reksio
+
+        on lolek {
+                remote tcp4://bolek
+                priority 0
+        }
+        on bolek {
+                remote tcp4://lolek
+                priority 1
+        }
+        on reksio {
+                remote tcp4://lolek tcp4://bolek
+        }
+}
+
+resource daemon {
+        exec /etc/daemon.sh
+        friends lolek bolek reksio
+
+        on lolek {
+                remote tcp4://bolek
+                priority 0
+        }
+        on bolek {
+                remote tcp4://lolek
+                priority 1
+        }
+        on reksio {
+                remote tcp4://lolek tcp4://bolek
+        }
+}
+}}}
+Exec scripts, which are stored on all three nodes:
+
+/etc/storage.sh:
+{{{
+#!/bin/sh
+
+PROV=storage
+POOL=storage
+IF=em0
+IP=172.20.68.100
+
+HAST=/etc/rc.d/hastd
+HASTCTL=/sbin/hastctl
+ZPOOL=/sbin/zpool
+ZFS=/sbin/zfs
+IFCONFIG=/sbin/ifconfig
+MOUNTD=/etc/rc.d/mountd
+NFSD=/etc/rc.d/nfsd
+
+RUN=0
+STOPPED=1
+UNKNOWN=2
+
+start()
+{
+    logger -p local0.debug -t hastmon "Starting $PROV..."
+    "${HAST}" onestatus || "${HAST}" onestart 
+    "${HASTCTL}" role primary "${PROV}"
+    "${ZPOOL}" import -f ${POOL}
+    "${IFCONFIG}" "${IF}" alias "${IP}" netmask 0xffffffff
+    "${MOUNTD}" onestart
+    "${NFSD}" onestart
+    logger -p local0.debug -t hastmon "done."
+}
+
+stop()
+{
+    logger -p local0.debug -t hastmon "Stopping $PROV..."
+    "${NFSD}" onestop
+    "${MOUNTD}" onestop
+    "${IFCONFIG}" "${IF}" -alias "${IP}" netmask 0xffffffff
+    "${ZPOOL}" export -f ${POOL}
+    "${HAST}" onestatus || "${HAST}" onestart 
+    "${HASTCTL}" role secondary "${PROV}" 
+    logger -p local0.debug -t hastmon "done."
+}
+
+status()
+{
+    "${HASTCTL}" status "${PROV}" |
+    grep -q '^ *role: *primary *$' && 
+    "${ZFS}" list "${POOL}" > /dev/null 2>&1 &&
+    "${NFSD}" onestatus > /dev/null 2>&1 &&
+    "${MOUNTD}" onestatus > /dev/null 2>&1 &&
+    return ${RUN}
+ 
+    "${HASTCTL}" status "${PROV}" |
+    grep -q '^ *role: *secondary *$' && 
+    return ${STOPPED}
+    
+    return ${UNKNOWN}
+}
+
+case $1 in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    role|connect|disconnect|complain)
+        exit 0
+        ;;
+    *)
+        echo "usage: $0 stop|start|status|role|connect|disconnect|complain"
+        exit 1
+        ;;
+esac
+}}}
+
+/etc/daemon.sh:
+{{{
+#!/bin/sh
+
+DAEMON=/etc/rc.d/lpd # :-)
+
+case $1 in
+    start)
+        ${DAEMON} onestart
+        ;;
+    stop)
+        ${DAEMON} onestop
+        ;;
+    status)
+        ${DAEMON} onestatus
+        ;;
+    role|connect|disconnect|complain)
+        exit 0
+        ;;
+    *)
+        echo "usage: $0 stop|start|status|role|connect|disconnect|complain"
+        exit 1
+        ;;
+esac
+}}}
+
+Start hastmon daemon and set role on all hosts:
+{{{
+lolek# hastmon
+lolek# hastmonctl role primary all
+
+bolek# hastmon
+bolek# hastmonctl role secondary all
+
+reksio# hastmon
+reksio# hastmonctl role watchdog all
+}}}
+
+Check nodes' status: 
+{{{
+lolek# hastmonctl status
+storage:
+  role: primary
+  exec: /etc/storage.sh
+  remoteaddr: tcp4://bolek(connected)
+  state: run
+  attempts: 0 from 3
+  complaints: 0 for last 120 sec (threshold 3)
+  heartbeat: 5 sec
+daemon:
+  role: primary
+  exec: /etc/daemon.sh
+  remoteaddr: tcp4://bolek(connected)
+  state: run
+  attempts: 0 from 3
+  complaints: 0 for last 120 sec (threshold 3)
+  heartbeat: 5 sec
+
+bolek# hastmonctl status
+storage:
+  role: secondary
+  exec: /etc/storage.sh
+  remoteaddr: tcp4://lolek(connected)
+  state: stopped
+  attempts: 0 from 3
+  complaints: 0 for last 120 sec (threshold 3)
+  heartbeat: 5 sec
+daemon:
+  role: secondary
+  exec: /etc/daemon.sh
+  remoteaddr: tcp4://lolek(connected)
+  state: stopped
+  attempts: 0 from 3
+  complaints: 0 for last 120 sec (threshold 3)
+  heartbeat: 5 sec
+
+reksio# hastmonctl status
+storage:
+  role: watchdog
+  exec: /etc/storage.sh
+  remoteaddr: tcp4://lolek(disconnected) tcp4://bolek(disconnected)
+  state: unknown
+  attempts: 0 from 3
+  complaints: 0 for last 120 sec (threshold 3)
+  heartbeat: 5 sec
+daemon:
+  role: watchdog
+  exec: /etc/daemon.sh
+  remoteaddr: tcp4://lolek(disconnected) tcp4://bolek(disconnected)
+  state: unknown
+  attempts: 0 from 3
+  complaints: 0 for last 120 sec (threshold 3)
+  heartbeat: 5 sec
+}}}
