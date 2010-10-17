@@ -13,8 +13,8 @@
 name="hastmon"
 rcvar=`set_rcvar`
 pidfile="/var/run/${name}.pid"
-command="/sbin/${name}"
-hastmonctl="/sbin/hastmonctl"
+command="/usr/local/sbin/${name}"
+hastmonctl="/usr/local/sbin/hastmonctl"
 required_files="/etc/hastmon.conf"
 stop_precmd="hastmon_stop_precmd"
 
