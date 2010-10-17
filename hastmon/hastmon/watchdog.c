@@ -427,7 +427,7 @@ heartbeat_start_thread(void *arg)
 
 		hio->hio_cmd = HIO_CHECK;
 		for (ii = 0; ii < ncomps; ii++)
-			hio->hio_status[ii].rs_error = EINVAL;
+			hio->hio_status[ii].rs_error = 0;
 		pjdlog_debug(2, "heartbeat_start: (%p) Moving check request to the send queues.", hio);
 		refcount_init(&hio->hio_countdown, ncomps);
 		pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.", hio, hio->hio_countdown);		
