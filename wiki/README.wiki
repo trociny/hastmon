@@ -14,12 +14,13 @@ ensuring that the service is not started there. There should be also
 at least one node acting as a watchdog -- it checks periodically
 status of all nodes and sends complaints to Secondary nodes if Primary
 is not available. Secondary node makes decision to change its role to
-Primary when two conditions fulfil: there is no connection from
+Primary when two conditions are meat: there is no connection from
 primary and there are complaints from watchdog.
 
-Most of the HASTMON's code was taken from [http://wiki.freebsd.org/HAST
-FreeBSD HAST project] and it was developed as a monitoring daemon for
-HAST cluster but can be used for other setups.
+Most of the HASTMON's code was taken from 
+[http://wiki.freebsd.org/HAST FreeBSD HAST project]
+and it was developed as a monitoring daemon for HAST cluster but can be
+used for other setups.
 
 This software is being developed and tested under FreeBSD. The work is
 in progress. There should not be serious issues with porting to other
