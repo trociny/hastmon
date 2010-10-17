@@ -1,3 +1,5 @@
+#summary HASTMON -- cluster monitoring daemon.
+
 = Introduction. =
 
 HASTMON is a monitoring daemon that allows a couple of hosts to run a
@@ -11,12 +13,13 @@ ensuring that the service is not started there. There should be also
 at least one node acting as a watchdog -- it checks periodically
 status of all nodes and sends complaints to Secondary nodes if Primary
 is not available. Secondary node makes decision to change its role to
-Primary when two conditions fulfil: there is no connection from
+Primary when two conditions are meat: there is no connection from
 primary and there are complaints from watchdog.
 
-Most of the HASTMON's code was taken from FreeBSD HAST project
-(http://wiki.freebsd.org/HAST) and it was developed as a monitoring
-daemon for HAST cluster but can be used for other setups.
+Most of the HASTMON's code was taken from 
+[http://wiki.freebsd.org/HAST FreeBSD HAST project]
+and it was developed as a monitoring daemon for HAST cluster but can be
+used for other setups.
 
 This software is being developed and tested under FreeBSD. The work is
 in progress. There should not be serious issues with porting to other
@@ -26,8 +29,10 @@ Unixes, though.
 
 To build and install under FreeBSD:
 
-  make
-  make install
+{{{
+make
+make install
+}}}
 
 = Configuration. =
 
@@ -50,11 +55,12 @@ In this example two resources will be set up -- one is some
 application/daemon that may run only on one server and another is HAST
 cluster that provides NFS storage.
 
-The cluster is run on three nodes: lolek, bolek -- running the service
-and acting as Primary-Secondary, and reksio -- acting as Watchdog.
+The cluster is run on three nodes: lolek, bolek -- running the services
+(resources) and acting as Primary-Secondary, and reksio -- acting as
+Watchdog.
 
 Configuration file /etc/hastmon.conf is the same on all nodes:
-
+{{{
 complaint_count 3
 complaint_interval 120
 
@@ -91,11 +97,11 @@ resource daemon {
                 remote tcp4://lolek tcp4://bolek
         }
 }
-
+}}}
 Exec scripts, which are stored on all three nodes:
 
 /etc/storage.sh:
-
+{{{
 #!/bin/sh
 
 PROV=storage
@@ -173,9 +179,10 @@ case $1 in
         exit 1
         ;;
 esac
+}}}
 
 /etc/daemon.sh:
- 
+{{{
 #!/bin/sh
 
 DAEMON=/etc/rc.d/lpd # :-)
@@ -198,9 +205,10 @@ case $1 in
         exit 1
         ;;
 esac
+}}}
 
-Start hastmon daemon and set role on all hosts:
-
+Start hastmon daemon and set up role on all hosts:
+{{{
 lolek# hastmon
 lolek# hastmonctl role primary all
 
@@ -209,9 +217,10 @@ bolek# hastmonctl role secondary all
 
 reksio# hastmon
 reksio# hastmonctl role watchdog all
+}}}
 
 Check nodes' status: 
-
+{{{
 lolek# hastmonctl status
 storage:
   role: primary
@@ -265,6 +274,4 @@ daemon:
   attempts: 0 from 3
   complaints: 0 for last 120 sec (threshold 3)
   heartbeat: 5 sec
-
---
-Mikolaj Golub
+}}}
