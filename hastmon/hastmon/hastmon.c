@@ -447,7 +447,7 @@ listen_accept(void)
 		} else if (remote->r_in != NULL) {
 			char oaddr[256];
 
-			proto_remote_address(conn, oaddr, sizeof(oaddr));
+			proto_remote_address(remote->r_in, oaddr, sizeof(oaddr));
 			pjdlog_debug(1,
 			    "Canceling half-open connection from %s on connection from %s.",
 			    oaddr, raddr);

@@ -420,7 +420,7 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 		nv_free(nvin);
 		goto close;
 	}
-	if (size != sizeof(TAILQ_FIRST(&res->hr_remote)->r_token)) {
+	if (size != sizeof(remote->r_token)) {
 		pjdlog_warning("Handshake header from %s contains 'token' of wrong size (got %zu, expected %zu).",
 		    remote->r_addr, size, sizeof(remote->r_token));
 		nv_free(nvin);
@@ -1027,6 +1027,7 @@ guard_thread(void *arg)
 	int signo;
 
 	ncomps = res->hr_remote_cnt;
+	lastcheck = time(NULL);
 
 	PJDLOG_VERIFY(sigemptyset(&mask) == 0);
 	PJDLOG_VERIFY(sigaddset(&mask, SIGHUP) == 0);
