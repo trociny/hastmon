@@ -17,9 +17,9 @@ is not available. Secondary node makes decision to change its role to
 Primary when two conditions fulfil: there is no connection from
 primary and there are complaints from watchdog.
 
-Most of the HASTMON's code was taken from FreeBSD HAST project
-(http://wiki.freebsd.org/HAST) and it was developed as a monitoring
-daemon for HAST cluster but can be used for other setups.
+Most of the HASTMON's code was taken from [http://wiki.freebsd.org/HAST
+FreeBSD HAST project] and it was developed as a monitoring daemon for
+HAST cluster but can be used for other setups.
 
 This software is being developed and tested under FreeBSD. The work is
 in progress. There should not be serious issues with porting to other
@@ -30,8 +30,8 @@ Unixes, though.
 To build and install under FreeBSD:
 
 {{{
-  make
-  make install
+make
+make install
 }}}
 
 = Configuration. =
@@ -55,8 +55,9 @@ In this example two resources will be set up -- one is some
 application/daemon that may run only on one server and another is HAST
 cluster that provides NFS storage.
 
-The cluster is run on three nodes: lolek, bolek -- running the service
-and acting as Primary-Secondary, and reksio -- acting as Watchdog.
+The cluster is run on three nodes: lolek, bolek -- running the services
+(resources) and acting as Primary-Secondary, and reksio -- acting as
+Watchdog.
 
 Configuration file /etc/hastmon.conf is the same on all nodes:
 {{{
@@ -206,7 +207,7 @@ case $1 in
 esac
 }}}
 
-Start hastmon daemon and set role on all hosts:
+Start hastmon daemon and set up role on all hosts:
 {{{
 lolek# hastmon
 lolek# hastmonctl role primary all
