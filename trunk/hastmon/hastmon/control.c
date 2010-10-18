@@ -408,13 +408,13 @@ close:
 void *
 control_send_event_status(struct hast_resource *res, int event, int status)
 {
-	struct nv *cnvin, *cnvout;
+	struct nv *cnvout;
 	int error;
 
 	assert(res != NULL);
 	assert(event >= EVENT_MIN && event <= EVENT_MAX);
 
-	cnvin = cnvout = NULL;
+	cnvout = NULL;
 
 	/*
 	 * Prepare and send status to child process.
@@ -437,17 +437,7 @@ control_send_event_status(struct hast_resource *res, int event, int status)
 		pjdlog_errno(LOG_ERR, "Unable to send event status header");
 		goto done;
 	}
-	if (hast_proto_recv_hdr(res->hr_ctrl, &cnvin) < 0) {
-		pjdlog_errno(LOG_ERR, "Unable to receive event status header");
-		goto done;
-	}
-	/*
-	 * Do nothing with the answer. We only wait for it to be sure not
-	 * to exit too quickly after sending a status and exiting immediately.
-	 */
 done:
-	if (cnvin != NULL)
-		nv_free(cnvin);
 	if (cnvout != NULL)
 		nv_free(cnvout);
 }
@@ -479,10 +469,11 @@ ctrl_thread(void *arg)
 			nv_free(nvin);
 			continue;
 		}
-		nvout = nv_alloc();
+		nvout = NULL;
 		switch (cmd) {
 		case HASTCTL_STATUS:
 			pjdlog_debug(2, "ctrl_thread: Control message cmd: status.");
+			nvout = nv_alloc();
 			mtx_lock(&res->hr_lock);
 			TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 				if (remote->r_in == NULL || remote->r_out == NULL)
@@ -492,6 +483,14 @@ ctrl_thread(void *arg)
 			nv_add_uint8(nvout, res->hr_local_state, "state");
 			nv_add_uint8(nvout, res->hr_local_attempts, "attempts");
 			mtx_unlock(&res->hr_lock);
+			if (nv_error(nvout) != 0) {
+				pjdlog_error("Unable to create answer on control message.");
+				goto nv_free;
+			}
+			if (hast_proto_send(NULL, res->hr_ctrl, nvout, NULL, 0) < 0) {
+				pjdlog_errno(LOG_ERR,
+				    "Unable to send reply to control message");
+			}
 			break;
 		case HASTCTL_EVENT_STATUS:
 			pjdlog_debug(2, "ctrl_thread: Control message cmd: event.");
@@ -515,26 +514,16 @@ ctrl_thread(void *arg)
 				}
 				mtx_unlock(&res->hr_lock);
 			default:
-				/* XXX: We are not interested in a status of other events so far. */
 				break;
 			}
-			nv_add_uint8(nvout, HASTCTL_EVENT_STATUS, "cmd");
 			break;
 		default:
-			nv_add_int16(nvout, EINVAL, "error");
 			break;
-		}
-		if (nv_error(nvout) != 0) {
-			pjdlog_error("Unable to create answer on control message.");
-			goto nv_free;
-		}
-		if (hast_proto_send(NULL, res->hr_ctrl, nvout, NULL, 0) < 0) {
-			pjdlog_errno(LOG_ERR,
-			    "Unable to send reply to control message");
 		}
 	nv_free:
 		nv_free(nvin);
-		nv_free(nvout);
+		if (nvout != NULL)
+			nv_free(nvout);
 	}
 	/* NOTREACHED */
 	return (NULL);
