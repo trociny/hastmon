@@ -642,12 +642,13 @@ heartbeat_start_thread(void *arg)
 	ncomps = res->hr_remote_cnt;
 
 	for (;;) {
+		pjdlog_debug(2, "heartbeat_start: Sending status event to check local state.", hio);
+		event_send(res, EVENT_STATUS);
+		pjdlog_debug(2, "heartbeat_start: Sleeping for %d sec.", res->hr_heartbeat_interval);
 		sleep(res->hr_heartbeat_interval);
 		pjdlog_debug(2, "heartbeat_start: Taking free request.");
 		QUEUE_TAKE2(hio, free);
 		pjdlog_debug(2, "heartbeat_start: (%p) Got free request.", hio);
-		pjdlog_debug(2, "heartbeat_start: (%p) Sending status event to check local state.", hio);
-		event_send(res, EVENT_STATUS);
 		for (ii = 0; ii < ncomps; ii++)
 			hio->hio_remote_status[ii].rs_error = EINVAL;
 		refcount_init(&hio->hio_countdown, ncomps);

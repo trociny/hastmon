@@ -71,7 +71,7 @@ bool sigexit_received = false;
 struct pidfh *pfh;
 
 /* How often check for hooks running for too long. */
-#define	REPORT_INTERVAL	5
+#define	REPORT_INTERVAL	1
 
 static void
 usage(void)
