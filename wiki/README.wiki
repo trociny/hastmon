@@ -38,9 +38,9 @@ make install
 = Configuration. =
 
 There should be at least 3 nodes: two that run the service and acting
-as Primary-Secondary and one is Watchdog node. Configuration for the
-nodes is stored in /etc/hastmon.conf file, which is designed in a way
-that exactly the same file can be (and should be) used on all nodes.
+as Primary-Secondary and one is Watchdog node. Configuration for nodes
+is stored in /etc/hastmon.conf file, which is designed in a way that
+exactly the same file can be (and should be) used on all nodes.
 HASTMON can monitor several resources. For every resource the script
 should be provided that will be used to start/stop the resource and
 check its status. See hastmon.conf(5) and Examples section below how
@@ -62,9 +62,6 @@ Watchdog.
 
 Configuration file /etc/hastmon.conf is the same on all nodes:
 {{{
-complaint_count 3
-complaint_interval 120
-
 resource daemon {
         exec /etc/daemon.sh
         friends lolek bolek reksio
@@ -344,16 +341,16 @@ daemon:
   exec: /etc/daemon.sh
   remoteaddr: tcp4://bolek(connected)
   state: run
-  attempts: 0 from 3
-  complaints: 0 for last 120 sec (threshold 3)
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec
 storage:
   role: primary
   exec: /etc/storage.sh
   remoteaddr: tcp4://bolek(connected)
   state: run
-  attempts: 0 from 3
-  complaints: 0 for last 120 sec (threshold 3)
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec
 
 bolek# hastmonctl status
@@ -361,17 +358,17 @@ daemon:
   role: secondary
   exec: /etc/daemon.sh
   remoteaddr: tcp4://lolek(connected)
-  state: stopped
-  attempts: 0 from 3
-  complaints: 0 for last 120 sec (threshold 3)
+  state: stopping
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec
 storage:
   role: secondary
   exec: /etc/storage.sh
   remoteaddr: tcp4://lolek(connected)
-  state: stopped
-  attempts: 0 from 3
-  complaints: 0 for last 120 sec (threshold 3)
+  state: stopping
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec
 
 reksio# hastmonctl status
@@ -380,15 +377,15 @@ daemon:
   exec: /etc/daemon.sh
   remoteaddr: tcp4://lolek(disconnected) tcp4://bolek(disconnected)
   state: unknown
-  attempts: 0 from 3
-  complaints: 0 for last 120 sec (threshold 3)
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec
 storage:
   role: watchdog
   exec: /etc/storage.sh
   remoteaddr: tcp4://lolek(disconnected) tcp4://bolek(disconnected)
   state: unknown
-  attempts: 0 from 3
-  complaints: 0 for last 120 sec (threshold 3)
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec
 }}}
