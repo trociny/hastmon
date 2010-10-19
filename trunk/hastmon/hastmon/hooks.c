@@ -59,7 +59,7 @@ __FBSDID("$FreeBSD$");
 #include "synch.h"
 
 /* Report processes that are running for too long not often than this value. */
-#define	REPORT_INTERVAL	60
+#define	REPORT_INTERVAL	30
 
 /* Are we initialized? */
 static bool hooks_initialized = false;
@@ -398,12 +398,6 @@ hook_check(void)
 	pid_t pid;
 
 	assert(hooks_initialized);
-
-	/*
-	 * Garbage collect finished processes.
-	 */
-	/* while ((pid = wait3(&status, WNOHANG, NULL)) > 0) */
-	/* 	hook_check_one(pid, status); */
 
 	/*
 	 * Report about processes that are running for a long time.
