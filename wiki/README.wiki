@@ -346,7 +346,7 @@ daemon:
   state: run
   attempts: 0 from 3
   complaints: 0 for last 120 sec (threshold 3)
-  heartbeat: 5 sec
+  heartbeat: 10 sec
 storage:
   role: primary
   exec: /etc/storage.sh
@@ -354,7 +354,7 @@ storage:
   state: run
   attempts: 0 from 3
   complaints: 0 for last 120 sec (threshold 3)
-  heartbeat: 5 sec
+  heartbeat: 10 sec
 
 bolek# hastmonctl status
 daemon:
@@ -364,7 +364,7 @@ daemon:
   state: stopped
   attempts: 0 from 3
   complaints: 0 for last 120 sec (threshold 3)
-  heartbeat: 5 sec
+  heartbeat: 10 sec
 storage:
   role: secondary
   exec: /etc/storage.sh
@@ -372,7 +372,7 @@ storage:
   state: stopped
   attempts: 0 from 3
   complaints: 0 for last 120 sec (threshold 3)
-  heartbeat: 5 sec
+  heartbeat: 10 sec
 
 reksio# hastmonctl status
 daemon:
@@ -382,7 +382,7 @@ daemon:
   state: unknown
   attempts: 0 from 3
   complaints: 0 for last 120 sec (threshold 3)
-  heartbeat: 5 sec
+  heartbeat: 10 sec
 storage:
   role: watchdog
   exec: /etc/storage.sh
@@ -390,5 +390,5 @@ storage:
   state: unknown
   attempts: 0 from 3
   complaints: 0 for last 120 sec (threshold 3)
-  heartbeat: 5 sec
+  heartbeat: 10 sec
 }}}
