@@ -87,9 +87,9 @@
 #define	HAST_PORT	8458
 #define	HAST_LISTEN	"tcp4://0.0.0.0:8458"
 #define	HAST_PIDFILE	"/var/run/hastmon.pid"
-#define HAST_ATTEMPTS	3
+#define HAST_ATTEMPTS	5
 #define HAST_HBEAT_INT	10
-#define HAST_CMPLNT_CNT	5
+#define HAST_CMPLNT_CNT	3
 #define HAST_CMPLNT_INT	60
 
 #define	HAST_ADDRSIZE	1024
