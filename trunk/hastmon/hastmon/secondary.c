@@ -292,6 +292,10 @@ local_check_thread(void *arg)
 	struct hast_resource *res = arg;
 
 	for (;;) {
+		pjdlog_debug(2, "local_check: Sending status event to check local state.");
+		event_send(res, EVENT_STATUS);
+		pjdlog_debug(2, "local_check: Sleeping for %d sec.", res->hr_heartbeat_interval);
+		sleep(res->hr_heartbeat_interval);
 		mtx_lock(&res->hr_lock);
 		pjdlog_debug(2, "local_check: Local state is %s (%u).",
 		    state2str(res->hr_local_state),
@@ -301,11 +305,10 @@ local_check_thread(void *arg)
 			mtx_unlock(&res->hr_lock);
 			pjdlog_debug(2, "local_check: Stopping resource.");
 			event_send(res, EVENT_STOP);
+			pjdlog_debug(2, "local_check: Sleeping for %d sec.", res->hr_heartbeat_interval);
 			sleep(res->hr_heartbeat_interval);			
 		} else
 			mtx_unlock(&res->hr_lock);
-		event_send(res, EVENT_STATUS);
-		sleep(res->hr_heartbeat_interval);
 	}
 	/* NOTREACHED */
 	return (NULL);
