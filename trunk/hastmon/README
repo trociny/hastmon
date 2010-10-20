@@ -149,10 +149,11 @@ RUN=0
 STOPPED=1
 UNKNOWN=2
 
+progname=$(basename $0)
 
 start()
 {
-    logger -p local0.debug -t hastmon "Starting $PROV..."
+    logger -p local0.debug -t "${progname}[$$]" "Starting $PROV..."
     # Check if hastd is started and start if it is not.
     "${HAST}" onestatus || "${HAST}" onestart
 
@@ -163,16 +164,16 @@ start()
         sleep 1
     done
     if pgrep -f "hastd: ${PROV} \(secondary\)" >/dev/null 2>&1; then
-        logger -p local0.error -t hastmon \
+        logger -p local0.error -t "${progname}[$$]" \
 	    "Secondary process for resource ${PROV} is still running after 30 seconds."
         exit 1
     fi
-    logger -p local0.debug -t hastmon "Secondary process in not running."
+    logger -p local0.debug -t "${progname}[$$]" "Secondary process in not running."
 
     # Change role to primary for our resource.
     out=`${HASTCTL} role primary "${PROV}" 2>&1`
     if [ $? -ne 0 ]; then
-        logger -p local0.error -t hastmon \
+        logger -p local0.error -t "${progname}[$$]" \
 	    "Unable to change to role to primary for resource ${PROV}: ${out}."
         exit 1
     fi
@@ -183,10 +184,10 @@ start()
         sleep 0.1
     done
     if [ ! -c "${DEV}" ]; then
-        logger -p local0.error -t hastmon "Device ${DEV} didn't appear."
+        logger -p local0.error -t "${progname}[$$]" "Device ${DEV} didn't appear."
         exit 1
     fi
-    logger -p local0.debug -t hastmon "Role for resource ${prov} changed to primary."
+    logger -p local0.debug -t "${progname}[$$]" "Role for resource ${prov} changed to primary."
 
     # Import ZFS pool. Do it forcibly as it remembers hostid of the
     # other cluster node. Before import we check current status of
@@ -198,11 +199,11 @@ start()
     if [ $? -ne 0 ]; then
 	out=`"${ZPOOL}" import -f "${POOL}" 2>&1`
 	if [ $? -ne 0 ]; then
-            logger -p local0.error -t hastmon \
+            logger -p local0.error -t "${progname}[$$]" \
 		"ZFS pool import for resource ${PROV} failed: ${out}."
             exit 1
 	fi
-	logger -p local0.debug -t hastmon "ZFS pool for resource ${PROV} imported."
+	logger -p local0.debug -t "${progname}[$$]" "ZFS pool for resource ${PROV} imported."
     fi
 
     "${ZFS}" set mountpoint=${MOUNTPOINT} ${FS}
@@ -211,24 +212,24 @@ start()
 
     out=`"${MOUNTD}" onerestart 2>&1`
     if [ $? -ne 0 ]; then
-        logger -p local0.error -t hastmon \
+        logger -p local0.error -t "${progname}[$$]" \
 	    "Can't start mountd: ${out}."
         exit 1
     fi
     
     out=`"${NFSD}" onerestart 2>&1`
     if [ $? -ne 0 ]; then
-        logger -p local0.error -t hastmon \
+        logger -p local0.error -t "${progname}[$$]" \
 	    "Can't start nfsd: ${out}."
         exit 1
     fi
 
-    logger -p local0.debug -t hastmon "NFS started."
+    logger -p local0.debug -t "${progname}[$$]" "NFS started."
 }
 
 stop()
 {
-    logger -p local0.debug -t hastmon "Stopping $PROV..."
+    logger -p local0.debug -t "${progname}[$$]" "Stopping $PROV..."
 
     # Kill start script if it still runs in the background.
     sig="TERM"
@@ -240,11 +241,11 @@ stop()
         sleep 1
     done
     if [ -n "${pgid}" ]; then
-        logger -p local0.error -t hastmon \
+        logger -p local0.error -t "${progname}[$$]" \
 	    "'/etc/storage.sh start' process for resource ${PROV} is still running after 30 seconds."
         exit 1
     fi
-    logger -p local0.debug -t hastmon "'/etc/storage.sh start' is not running."
+    logger -p local0.debug -t "${progname}[$$]" "'/etc/storage.sh start' is not running."
 
     "${NFSD}" onestop
     "${MOUNTD}" onestop
@@ -257,11 +258,11 @@ stop()
             # Forcibly export file pool.
             out=`${ZPOOL} export -f "${POOL}" 2>&1`
             if [ $? -ne 0 ]; then
-		logger -p local0.error -t hastmon \
+		logger -p local0.error -t "${progname}[$$]" \
 		    "Unable to export pool for resource ${PROV}: ${out}."
 		exit 1
             fi
-	    logger -p local0.debug -t hastmon \
+	    logger -p local0.debug -t "${progname}[$$]" \
 		"ZFS pool for resource ${PROV} exported."
 	fi
     else
@@ -271,14 +272,14 @@ stop()
     # Change role to secondary for our resource.
     out=`${HASTCTL} role secondary "${PROV}" 2>&1`
     if [ $? -ne 0 ]; then
-        logger -p local0.error -t hastmon \
+        logger -p local0.error -t "${progname}[$$]" \
 	    "Unable to change to role to secondary for resource ${PROV}: ${out}."
         exit 1
     fi
-    logger -p local0.debug -t hastmon \
+    logger -p local0.debug -t "${progname}[$$]" \
 	"Role for resource ${PROV} changed to secondary."
 
-    logger -p local0.info -t hastmon \
+    logger -p local0.info -t "${progname}[$$]" \
 	"Successfully switched to secondary for resource ${PROV}."
 }
 
@@ -317,7 +318,6 @@ case $1 in
 	exit 1
 	;;
 esac
-
 }}}
 
 Start hastmon daemon and set up role on all hosts:
