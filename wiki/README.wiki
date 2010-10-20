@@ -358,7 +358,7 @@ daemon:
   role: secondary
   exec: /etc/daemon.sh
   remoteaddr: tcp4://lolek(connected)
-  state: stopping
+  state: stopped
   attempts: 0 from 5
   complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec
@@ -366,7 +366,7 @@ storage:
   role: secondary
   exec: /etc/storage.sh
   remoteaddr: tcp4://lolek(connected)
-  state: stopping
+  state: stopped
   attempts: 0 from 5
   complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec
