@@ -408,6 +408,7 @@ heartbeat_start_thread(void *arg)
 				countdown++;
 		}
 		if (complain && countdown > 0) {
+			res->hr_local_state = HAST_STATE_UNKNOWN;
 			pjdlog_debug(2, "heartbeat_start: (%p) Moving complain request to the send queues.", hio);
 			hio->hio_cmd = HIO_COMPLAINT;
 			refcount_init(&hio->hio_countdown, countdown);
@@ -422,8 +423,10 @@ heartbeat_start_thread(void *arg)
 			pjdlog_debug(2, "heartbeat_start: Taking free request.");
 			QUEUE_TAKE2(hio, free);
 			pjdlog_debug(2, "heartbeat_start: (%p) Got free request.", hio);
-		} else
+		} else {
+			res->hr_local_state = HAST_STATE_RUN;
 			mtx_unlock(&res->hr_lock);
+		}
 
 		hio->hio_cmd = HIO_CHECK;
 		for (ii = 0; ii < ncomps; ii++)

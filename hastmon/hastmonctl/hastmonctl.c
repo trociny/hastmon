@@ -123,8 +123,8 @@ static int
 control_status(struct nv *nv)
 {
 	unsigned int ii, jj;
-	const char *str;
-	int error, ret;
+	const char *str, *str1;
+	int error, role, ret;
 
 	ret = 0;
 
@@ -140,8 +140,8 @@ control_status(struct nv *nv)
 			printf("  error: %d\n", error);
 			continue;
 		}
-		printf("  role: %s\n",
-		       role2str(nv_get_uint8(nv, "role%u", ii)));
+		role = nv_get_uint8(nv, "role%u", ii);
+		printf("  role: %s\n", role2str(role));
 		printf("  exec: %s\n",
 		    nv_get_string(nv, "exec%u", ii));
 		printf("  remoteaddr:");
@@ -150,10 +150,26 @@ control_status(struct nv *nv)
 			if (str == NULL)
 				break;
 			printf(" %s", str);
-			str = nv_get_string(nv, "remotestate%u.%u", ii, jj);
-			if (str == NULL)
+			switch (role) {
+			case HAST_ROLE_PRIMARY:
+			case HAST_ROLE_SECONDARY:			
+				str = nv_get_string(nv, "remotestate%u.%u", ii, jj);
+				if (str == NULL)
+					break;
+				printf("(%s)", str);
 				break;
-			printf("(%s)", str);
+			case HAST_ROLE_WATCHDOG:			
+				str = nv_get_string(nv, "remoterole%u.%u", ii, jj);
+				if (str == NULL)
+					break;
+				str1 = nv_get_string(nv, "remotestate%u.%u", ii, jj);
+				if (str == NULL)
+					break;
+				printf("(%s/%s)", str, str1);
+				break;
+			default:
+				break;
+			}
 		}
 		printf("\n");
 		printf("  state: %s\n",
