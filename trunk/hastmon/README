@@ -374,16 +374,16 @@ reksio# hastmonctl status
 daemon:
   role: watchdog
   exec: /etc/daemon.sh
-  remoteaddr: tcp4://lolek(disconnected) tcp4://bolek(disconnected)
-  state: unknown
+  remoteaddr: tcp4://lolek(primary/run) tcp4://bolek(secondary/stopped)
+  state: run
   attempts: 0 from 5
   complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec
 storage:
   role: watchdog
   exec: /etc/storage.sh
-  remoteaddr: tcp4://lolek(disconnected) tcp4://bolek(disconnected)
-  state: unknown
+  remoteaddr: tcp4://lolek(primary/run) tcp4://bolek(secondary/stopped)
+  state: run
   attempts: 0 from 5
   complaints: 0 for last 60 sec (threshold 3)
   heartbeat: 10 sec

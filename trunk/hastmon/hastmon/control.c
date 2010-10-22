@@ -181,10 +181,21 @@ control_status_worker(struct hast_resource *res, struct nv *nvout,
 	TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
 		if ((str = nv_get_string(cnvin, "remotestate%u", remote->r_ncomp)) == NULL) {
 			error = ENOENT;
-			/* LOG */
+			pjdlog_debug(2, "control_status_worker: Cant' get remotestate%u",
+			    remote->r_ncomp);
 			goto end;
 		}
 		nv_add_string(nvout, str, "remotestate%u.%u", no, remote->r_ncomp);
+		if (res->hr_role == HAST_ROLE_WATCHDOG) {
+			if ((str = nv_get_string(cnvin, "remoterole%u",
+				    remote->r_ncomp)) == NULL) {
+				error = ENOENT;
+				pjdlog_debug(2, "control_status_worker: Cant' get remoterole%u",
+				    remote->r_ncomp);
+				goto end;
+			}
+			nv_add_string(nvout, str, "remoterole%u.%u", no, remote->r_ncomp);			
+		}
 	}
 	nv_add_uint8(nvout, nv_get_uint8(cnvin, "state"), "state%u", no);
 	nv_add_int32(nvout, nv_get_uint8(cnvin, "attempts"), "attempts%u", no);
@@ -476,10 +487,27 @@ ctrl_thread(void *arg)
 			nvout = nv_alloc();
 			mtx_lock(&res->hr_lock);
 			TAILQ_FOREACH(remote, &res->hr_remote, r_next)
-				if (remote->r_in == NULL || remote->r_out == NULL)
-					nv_add_string(nvout, "disconnected", "remotestate%u", remote->r_ncomp);
-				else
-					nv_add_string(nvout, "connected", "remotestate%u", remote->r_ncomp);
+				switch (res->hr_role) {
+				case HAST_ROLE_PRIMARY:
+				case HAST_ROLE_SECONDARY:
+					if (remote->r_in == NULL ||
+					    remote->r_out == NULL)
+						nv_add_string(nvout, "disconnected",
+						    "remotestate%u", remote->r_ncomp);
+					else
+						nv_add_string(nvout, "connected",
+						    "remotestate%u", remote->r_ncomp);
+					break;
+				case HAST_ROLE_WATCHDOG:
+					nv_add_string(nvout, state2str(remote->r_state),
+					    "remotestate%u", remote->r_ncomp);
+					nv_add_string(nvout, role2str(remote->r_role),
+					    "remoterole%u", remote->r_ncomp);
+					break;
+				default:
+					assert(!"invalid role");
+					break;
+				}
 			nv_add_uint8(nvout, res->hr_local_state, "state");
 			nv_add_uint8(nvout, res->hr_local_attempts, "attempts");
 			mtx_unlock(&res->hr_lock);
