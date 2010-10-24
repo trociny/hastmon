@@ -301,6 +301,7 @@ control_statement:	CONTROL STR
 			    sizeof(depth0_control)) >=
 			    sizeof(depth0_control)) {
 				pjdlog_error("control argument is too long.");
+				free($2);
 				return (1);
 			}
 			break;
@@ -311,12 +312,14 @@ control_statement:	CONTROL STR
 			    sizeof(lconfig->hc_controladdr)) >=
 			    sizeof(lconfig->hc_controladdr)) {
 				pjdlog_error("control argument is too long.");
+				free($2);
 				return (1);
  			}
  			break;
 		default:
 			assert(!"control at wrong depth level");
 		}
+		free($2);
 	}
 	;
 
@@ -328,6 +331,7 @@ listen_statement:	LISTEN STR
 			    sizeof(depth0_listen)) >=
 			    sizeof(depth0_listen)) {
 				pjdlog_error("listen argument is too long.");
+				free($2);
 				return (1);
 			}
 			break;
@@ -338,12 +342,14 @@ listen_statement:	LISTEN STR
 			    sizeof(lconfig->hc_listenaddr)) >=
 			    sizeof(lconfig->hc_listenaddr)) {
 				pjdlog_error("listen argument is too long.");
+				free($2);
 				return (1);
 			}
 			break;
 		default:
 			assert(!"listen at wrong depth level");
 		}
+		free($2);
 	}
 	;
 
@@ -438,6 +444,7 @@ exec_statement:		EXEC STR
 			if (strlcpy(depth0_exec, $2, sizeof(depth0_exec)) >=
 			    sizeof(depth0_exec)) {
 				pjdlog_error("Exec path is too long.");
+				free($2);
 				return (1);
 			}
 			break;
@@ -448,12 +455,14 @@ exec_statement:		EXEC STR
 			    sizeof(curres->hr_exec)) >=
 			    sizeof(curres->hr_exec)) {
 				pjdlog_error("Exec path is too long.");
+				free($2);
 				return (1);
 			}
 			break;
 		default:
 			assert(!"exec at wrong depth level");
 		}
+		free($2);
 	}
 	;
 
@@ -467,6 +476,7 @@ node_start:	STR
 	{
 		switch (isitme($1)) {
 		case -1:
+			free($1);
 			return (1);
 		case 0:
 			break;
@@ -476,6 +486,7 @@ node_start:	STR
 		default:
 			assert(!"invalid isitme() return value");
 		}
+		free($1);
 	}
 	;
 
@@ -545,14 +556,17 @@ resource_start:	STR
 		curres = calloc(1, sizeof(*curres));
 		if (curres == NULL) {
 			pjdlog_error("Unable to allocate memory for resource.");
+			free($1);
 			return (1);
 		}
 		if (strlcpy(curres->hr_name, $1,
 		    sizeof(curres->hr_name)) >=
 		    sizeof(curres->hr_name)) {
 			pjdlog_error("Resource name is too long.");
+			free($1);
 			return (1);
 		}
+		free($1);
 		curres->hr_role = HAST_ROLE_INIT;
 		curres->hr_previous_role = HAST_ROLE_INIT;
 		curres->hr_timeout = -1;
@@ -603,6 +617,7 @@ resource_node_start:	STR
 		if (curres != NULL) {
 			switch (isitme($1)) {
 			case -1:
+				free($1);
 				return (1);
 			case 0:
 				break;
@@ -612,6 +627,7 @@ resource_node_start:	STR
 			default:
 				assert(!"invalid isitme() return value");
 			}
+			free($1);
 		}
 	}
 	;
@@ -661,8 +677,10 @@ remote_address:		STR
 				    sizeof(remote->r_addr)) >=
 			    sizeof(remote->r_addr)) {
 				pjdlog_error("remote argument too long");
+				free($1);
 				return (1);
 			}
+			free($1);
 			remote->r_res = curres;
 			remote->r_ncomp = curres->hr_remote_cnt;
 			TAILQ_INSERT_TAIL(&curres->hr_remote, remote, r_next);
@@ -695,8 +713,10 @@ friend_address:		STR
 				    sizeof(addr->a_addr)) >=
 			    sizeof(addr->a_addr)) {
 				pjdlog_error("address argument too long");
+				free($1);
 				return (1);
 			}
+			free($1);
 			TAILQ_INSERT_TAIL(&lconfig->hc_friends, addr, a_next);
 			break;
 		case 2:
@@ -711,8 +731,10 @@ friend_address:		STR
 					    sizeof(addr->a_addr)) >=
 				    sizeof(addr->a_addr)) {
 					pjdlog_error("address argument too long");
+					free($1);
 					return (1);
 				}
+				free($1);
 				TAILQ_INSERT_TAIL(&curres->hr_friends, addr, a_next);
 			}
 			break;

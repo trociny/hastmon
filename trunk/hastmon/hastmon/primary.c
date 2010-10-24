@@ -478,6 +478,7 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 		nv_free(nvin);
 		goto close;
 	}
+	nv_free(nvin);
 	pjdlog_info("Connected to %s.", remote->r_addr);
 	if (inp != NULL && outp != NULL) {
 		*inp = in;
