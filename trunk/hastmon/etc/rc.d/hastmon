@@ -15,7 +15,7 @@ rcvar=`set_rcvar`
 pidfile="/var/run/${name}.pid"
 command="/usr/local/sbin/${name}"
 hastmonctl="/usr/local/sbin/hastmonctl"
-required_files="/etc/hastmon.conf"
+required_files="/usr/local/etc/hastmon.conf"
 stop_precmd="hastmon_stop_precmd"
 
 hastmon_stop_precmd()
