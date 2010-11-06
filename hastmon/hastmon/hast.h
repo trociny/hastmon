@@ -82,7 +82,7 @@
 #define HIO_STATE		1
 
 #define	HAST_TIMEOUT	5
-#define	HAST_CONFIG	"/etc/hastmon.conf"
+#define	HAST_CONFIG	"/usr/local/etc/hastmon.conf"
 #define	HAST_CONTROL	"/var/run/hastmonctl"
 #define	HAST_PORT	8458
 #define	HAST_LISTEN	"tcp4://0.0.0.0:8458"
