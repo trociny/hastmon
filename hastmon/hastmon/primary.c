@@ -127,10 +127,6 @@ static pthread_rwlock_t *hio_remote_lock;
  * Maximum number of outstanding I/O requests.
  */
 #define	HAST_HIO_MAX	256
-/*
- * Number of seconds to sleep between reconnect retries.
- */
-#define	RETRY_SLEEP		10
 
 #define	ISCONNECTED(remote, no)	\
 	(remote->r_in != NULL && remote->r_out != NULL)
@@ -434,7 +430,7 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 	 * Setup incoming connection with remote node.
 	 */
 	if (proto_client(remote->r_addr, &in) < 0) {
-		pjdlog_errno(LOG_WARNING, "Unable to create connection to %s",
+		primary_exit(EX_TEMPFAIL, "Unable to create connection to %s",
 		    remote->r_addr);
 	}
 	/* Try to connect, but accept failure. */
@@ -896,7 +892,8 @@ heartbeat_end_thread(void *arg)
 		TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
 			remote->r_state =
 				hio->hio_remote_status[remote->r_ncomp].rs_state;
-			if (remote->r_state == HAST_STATE_RUN)
+			if (remote->r_state == HAST_STATE_RUN ||
+			    remote->r_state == HAST_STATE_STARTING)
 				remote_run = remote->r_addr;
 		}
 		mtx_unlock(&res->hr_lock);
@@ -1036,6 +1033,7 @@ guard_thread(void *arg)
 	PJDLOG_VERIFY(sigaddset(&mask, SIGINT) == 0);
 	PJDLOG_VERIFY(sigaddset(&mask, SIGTERM) == 0);
 
+	timeout.tv_sec = res->hr_heartbeat_interval;
 	timeout.tv_nsec = 0;
 	signo = -1;
 
@@ -1056,12 +1054,11 @@ guard_thread(void *arg)
 
 		pjdlog_debug(2, "remote_guard: Checking connections.");
 		now = time(NULL);
-		if (lastcheck + RETRY_SLEEP <= now) {
+		if (lastcheck + res->hr_heartbeat_interval <= now) {
 			TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 				guard_one(remote);
 			lastcheck = now;
 		}
-		timeout.tv_sec = RETRY_SLEEP;
 		signo = sigtimedwait(&mask, NULL, &timeout);
 	}
 	/* NOTREACHED */
