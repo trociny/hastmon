@@ -473,6 +473,7 @@ remote_send_thread(void *arg)
 			    "remote_send[%u]: (%p) Unable to setup connection to %s.",
 			    ncomp, hio, remote->r_addr);
 			hio->hio_status[ncomp].rs_error = errno;
+			conn = NULL;
 			goto close;
 		}
 		/* ...and connect to hastmon. */
@@ -542,7 +543,8 @@ remote_send_thread(void *arg)
 		    state2str(hio->hio_status[ncomp].rs_state));
 		
 close:
-		proto_close(conn);
+		if (conn != NULL)
+			proto_close(conn);
 		if (nv != NULL)
 			nv_free(nv);
 		pjdlog_debug(2, "remote_send[%u]: (%p) countdown is %d.", ncomp, hio, hio->hio_countdown);		
