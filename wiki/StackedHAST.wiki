@@ -971,7 +971,7 @@ lower1:
 lower2:
   role: watchdog
   exec: /etc/lower.sh
-  remoteaddr: chuk(unknown/unknown) gek(unknown/unknown)
+  remoteaddr: chuk(primary/run) gek(secondary/stopped)
   state: run
   attempts: 0 from 5
   complaints: 0 for last 60 sec (threshold 10)
@@ -979,7 +979,7 @@ lower2:
 upper:
   role: watchdog
   exec: /etc/upper.sh
-  remoteaddr: lolek(primary/run) bolek(secondary/stopped) chuk(unknown/unknown) gek(unknown/unknown)
+  remoteaddr: lolek(primary/run) bolek(secondary/stopped) chuk(secondary/stopped) gek(secondary/stopped)
   state: run
   attempts: 0 from 5
   complaints: 0 for last 60 sec (threshold 3)
