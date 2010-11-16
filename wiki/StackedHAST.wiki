@@ -83,7 +83,7 @@ resource upper {
 }
 }}}
 
-As it is noticed in the comment above, hastd should be patched with [http://hastmon.googlecode.com/files/hastd.friends.patch this patch]: current version of hastd allows only connections from addresses specified as remote.
+As it is noted in the comment above, hastd should be patched with [http://hastmon.googlecode.com/files/hastd.friends.patch this patch]: current version of hastd allows only connections from addresses specified as remote.
 
 /etc/vip.sh script handles virtual IPs (172.20.68.31 or 172.20.68.32 for lower resource and 172.20.68.30 for upper resource) when a resource appears/disappears on a node:
 
