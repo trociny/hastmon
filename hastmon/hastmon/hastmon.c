@@ -191,24 +191,26 @@ terminate_worker(struct hast_resource *res, int sig)
 		 */
 		return;
 	}
-	/*
-	 * Check for events.
-	 */
-	timeout.tv_sec = REPORT_INTERVAL;
-	timeout.tv_usec = 0;
+
+	/* Check for events. */
+	if (res->hr_event != NULL) {
+		timeout.tv_sec = REPORT_INTERVAL;
+		timeout.tv_usec = 0;
 	
-	for (;;) {
-		fd = proto_descriptor(res->hr_event);
-		FD_SET(fd, &rfds);
-		ret = select(fd + 1, &rfds, NULL, NULL, &timeout);
-		if (FD_ISSET(fd, &rfds)) {
-			if (event_recv(res) == 0)
-				continue;
-			/* The worker process exited? */
+		for (;;) {
+			fd = proto_descriptor(res->hr_event);
+			FD_SET(fd, &rfds);
+			ret = select(fd + 1, &rfds, NULL, NULL, &timeout);
+			if (FD_ISSET(fd, &rfds)) {
+				if (event_recv(res) == 0)
+					continue;
+				/* The worker process exited? */
+				break;
+			}
 			break;
 		}
-		break;
 	}
+	
 	/* Wait for it to exit. */
 	if ((pid = waitpid(res->hr_workerpid,
 		    &status, 0)) != res->hr_workerpid) {
