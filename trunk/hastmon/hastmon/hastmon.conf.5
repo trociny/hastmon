@@ -60,7 +60,6 @@ file is following:
 control <addr>
 listen <addr>
 timeout <seconds>
-priority <number>
 attempts <number>
 heartbeat_interval <seconds>
 complaint_count <number>
@@ -284,7 +283,7 @@ Node's priority (the lower number the higher priority).
 Priority is used when several primaries are started (e.g. after previous
 primary died) to negotiate who will be primary and who has to
 switch to secondary.
-The default value is.
+The default value is
 .Va 100 .
 .It Ic remote Aq addr ...
 .Pp

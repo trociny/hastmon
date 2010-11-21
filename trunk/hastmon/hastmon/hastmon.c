@@ -391,13 +391,13 @@ listen_accept(void)
 
 	/*
 	 * If the resource is primary but the request comes from the
-	 * resource with higher priority we have to switch to previous
-	 * role. If our priority is higher it is expected that other
-	 * end will switch to secondary/init.
+	 * resource with higher priority (lower number) we have to
+	 * switch to previous role. If our priority is higher it is
+	 * expected that other end will switch to secondary/init.
 	 */
 	if (res->hr_role == HAST_ROLE_PRIMARY) {
 		if (res->hr_priority >= nv_get_int32(nvin, "priority")) {
-			pjdlog_debug(1, "Request has come for resource %s from primary with higher priority (%d, our is %d).",
+			pjdlog_debug(1, "Request has come for resource %s from primary with higher priority (priority number %d, our is %d).",
 			    res->hr_name, nv_get_int32(nvin, "priority"), res->hr_priority);			
 			if (res->hr_workerpid != 0) {
 				pjdlog_debug(1,
@@ -409,7 +409,7 @@ listen_accept(void)
 			}
 		} else {
 			nv_add_stringf(nverr, "errmsg",
-			    "Remote node acts as primary with higher priority %d.",
+			    "Remote node acts as primary with lower priority (prioty number %d).",
 			    res->hr_priority);
 			nv_add_int32(nvout, res->hr_priority, "priority");
 			goto fail;
