@@ -405,9 +405,7 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 		 */
 		if (nv_get_int32(nvin, "priority"))
 			primary_exitx(EX_NOPERM,
-				      "Primary with higher priority exists.");
-		nv_free(nvin);
-		goto close;
+			    "Primary with higher priority exists.");
 	}
 	token = nv_get_uint8_array(nvin, &size, "token");
 	if (token == NULL) {
