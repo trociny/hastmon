@@ -206,7 +206,16 @@ start()
 	logger -p local0.debug -t "${progname}[$$]" "ZFS pool for resource ${PROV} imported."
     fi
 
-    "${ZFS}" set mountpoint=${MOUNTPOINT} ${FS}
+    zfs mount | egrep -q "^${FS} "
+    if [ $? -ne 0 ]; then
+	out=`zfs mount "${FS}" 2>&1`
+	if [ $? -ne 0 ]; then
+            logger -p local0.error -t "${progname}[$$]" \
+		"ZFS mount for ${FS} failed: ${out}."
+            exit 1
+	fi
+	logger -p local0.debug -t "${progname}[$$]" "ZFS {$FS} mounted."
+    fi
  
     "${IFCONFIG}" "${IF}" alias "${IP}" netmask 0xffffffff
 
