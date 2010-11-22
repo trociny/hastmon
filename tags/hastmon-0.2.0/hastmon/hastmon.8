@@ -1,0 +1,160 @@
+.\" Copyright (c) 2010 The FreeBSD Foundation
+.\" Copyright (c) 2010 Mikolaj Golub <to.my.trociny@gmail.com>
+.\" All rights reserved.
+.\"
+.\" This software was developed by Mikolaj Golub. The source is derived
+.\" from HAST developed by Pawel Jakub Dawidek under sponsorship from
+.\" the FreeBSD Foundation.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $FreeBSD$
+.\"
+.Dd October 20, 2010
+.Dt HASTMON 8
+.Os
+.Sh NAME
+.Nm hastmon
+.Nd "cluster monitoring daemon"
+.Sh SYNOPSIS
+.Nm
+.Op Fl dFh
+.Op Fl c Ar config
+.Op Fl P Ar pidfile
+.Sh DESCRIPTION
+The
+.Nm
+daemon monitors a resource (process, FS, etc) on several nodes.
+The resource can be active only on one machine. This machine is called
+primary.
+.Pp
+There is one main
+.Nm
+daemon which starts new worker process as soon as a role for the given
+resource is changed to primary or watchdog or as soon as a role for
+the given resource is changed to secondary and remote (primary) node
+will successfully connect to it.
+Every worker process gets a new process title (see
+.Xr setproctitle 3 ) ,
+which describes its role and resource it controls.
+The exact format is:
+.Bd -literal -offset indent
+hastmon: <resource name> (<role>)
+.Ed
+.Pp 
+The connection between two
+.Nm
+daemons is initiated from the one running as primary to the one
+running as secondary.
+When primary
+.Nm
+is unable to connect or connection fails, it will try to re-establish
+connection every few seconds.
+.Pp
+On start the
+.Nm
+daemon does not pick its role up automatically.
+The role has to be configured with the
+.Xr hastctl 8
+control utility.
+Secondary can switch its role to primary if the following conditions
+are meat: there is no connection from primary and there are complaints
+from watchdog.
+.Pp
+The
+.Nm
+daemon can be started with the following command line arguments:
+.Bl -tag -width ".Fl P Ar pidfile"
+.It Fl c Ar config
+Specify alternative location of the configuration file.
+The default location is
+.Pa /usr/local/etc/hastmon.conf .
+.It Fl d
+Print or log debugging information.
+This option can be specified multiple times to raise the verbosity
+level.
+.It Fl F
+Start the
+.Nm
+daemon in the foreground.
+By default
+.Nm
+starts in the background.
+.It Fl h
+Print the
+.Nm
+usage message.
+.It Fl P Ar pidfile
+Specify alternative location of a file where main process PID will be
+stored.
+The default location is
+.Pa /var/run/hastmon.pid .
+.El
+.Sh FILES
+.Bl -tag -width ".Pa /var/run/hastmonctl" -compact
+.It Pa /usr/local/etc/hastmon.conf
+The configuration file for
+.Nm
+and
+.Xr hastmonctl 8 .
+.It Pa /var/run/hastmonctl
+Control socket used by the
+.Xr hastmonctl 8
+control utility to communicate with
+.Nm .
+.It Pa /var/run/hastmon.pid
+The default location of the
+.Nm
+PID file.
+.El
+.Sh EXIT STATUS
+Exit status is 0 on success, or one of the values described in
+.Xr sysexits 3
+on failure.
+.Sh EXAMPLES
+Launch
+.Nm
+on both nodes and start watchdog on third node.
+Set role for resource
+.Nm shared
+to primary on
+.Nm nodeA
+and to secondary on
+.Nm nodeB .
+.Bd -literal -offset indent
+nodeB# hastmon
+nodeB# hastmonctl role secondary shared
+
+nodeA# hastmon
+nodeA# hastmonctl role primary shared
+
+nodeA# hastmon
+nodeA# hastmonctl role watchdog shared
+.Ed
+.Sh SEE ALSO
+.Xr hastmon.conf 5 ,
+.Xr hastmonctl 8 .
+.Sh AUTHORS
+The
+.Nm
+was developed by
+.An Mikolaj Golub Aq to.my.trociny@gmail.com .

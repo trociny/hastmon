@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# $FreeBSD$
+#
+
+# PROVIDE: hastmon
+# REQUIRE: NETWORKING syslogd
+# BEFORE:  DAEMON
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="hastmon"
+rcvar=`set_rcvar`
+pidfile="/var/run/${name}.pid"
+command="/usr/local/sbin/${name}"
+hastmonctl="/usr/local/sbin/hastmonctl"
+required_files="/usr/local/etc/hastmon.conf"
+stop_precmd="hastmon_stop_precmd"
+
+hastmon_stop_precmd()
+{
+	${hastmonctl} role init all
+}
+
+load_rc_config $name
+run_rc_command "$1"

@@ -1,0 +1,14 @@
+hastmon (0.2.0)
+
+  * Bug fixes, cleaning up, tuning. It looks like hastmon is ready for
+    production usage, well, at least it is beta :-).
+
+  * Small updates from HAST.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2010/11/22
+
+hastmon (0.1.0)
+
+  * Alpha.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2010/10/22
