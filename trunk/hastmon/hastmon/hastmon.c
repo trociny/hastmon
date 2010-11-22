@@ -409,9 +409,9 @@ listen_accept(void)
 			}
 		} else {
 			nv_add_stringf(nverr, "errmsg",
-			    "Remote node acts as primary with lower priority (prioty number %d).",
+			    "Remote node acts as primary with higher priority (prioty number %d).",
 			    res->hr_priority);
-			nv_add_int32(nvout, res->hr_priority, "priority");
+			nv_add_int32(nverr, res->hr_priority, "priority");
 			goto fail;
 		}
 	}
