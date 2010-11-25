@@ -78,14 +78,14 @@ control_set_role_common(struct hastmon_config *cfg, struct nv *nvout,
 {
 	int oldrole;
 
-	assert(cfg != NULL);
-	assert(nvout != NULL);
-	assert(name != NULL);
-
 	/* Name is always needed. */
-	nv_add_string(nvout, name, "resource%u", no);
+	if (name != NULL)
+		nv_add_string(nvout, name, "resource%u", no);
 
 	if (res == NULL) {
+		assert(cfg != NULL);
+		assert(name != NULL);
+
 		TAILQ_FOREACH(res, &cfg->hc_resources, hr_next) {
 			if (strcmp(res->hr_name, name) == 0)
 				break;

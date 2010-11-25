@@ -101,6 +101,8 @@ complaints_expire(struct hast_resource *res)
 	time_t now;
 	int ii;
 
+	assert(res != NULL);
+	
 	now = time(NULL);
 	ii = 0;
 	TAILQ_FOREACH_SAFE(cmpl, &res->hr_complaints, c_next, cmpl_temp) {
@@ -144,6 +146,9 @@ complaints_add(struct hast_resource *res)
 int
 complaints_cnt(struct hast_resource *res)
 {
+
+	assert(res != NULL);
+	
 	return complaints_register(res, -1);
 }
 
@@ -154,9 +159,10 @@ void
 complaints_clear(struct hast_resource *res)
 {
 	struct hast_complaint *cmpl;
+
+	assert(res != NULL);
 	
-	while (!TAILQ_EMPTY(&res->hr_complaints)) {
-		cmpl = TAILQ_FIRST(&res->hr_complaints);
+	while ((cmpl = TAILQ_FIRST(&res->hr_complaints)) != NULL) {
 		TAILQ_REMOVE(&res->hr_complaints, cmpl, c_next);
 		free(cmpl);
 	}

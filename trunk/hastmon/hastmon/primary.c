@@ -212,6 +212,14 @@ primary_exitx(int exitcode, const char *fmt, ...)
 	exit(exitcode);
 }
 
+static __dead2 void
+primary_reload(void)
+{
+
+	pjdlog_info("Terminating due to reload.");
+	exit(EX_OK);
+}
+
 static bool
 real_remote(const struct hast_remote *remote)
 {
@@ -1038,7 +1046,7 @@ guard_thread(void *arg)
 	for (;;) {
 		switch (signo) {
 		case SIGHUP:
-			/* config_reload(); */
+			primary_reload();
 			break;
 		case SIGINT:
 		case SIGTERM:
