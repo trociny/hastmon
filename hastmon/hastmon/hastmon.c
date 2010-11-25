@@ -147,10 +147,260 @@ child_exit(void)
 	}
 }
 
+static int
+remotecmp(const struct hast_resource *res0, const struct hast_resource *res1)
+{
+	struct hast_remote *addr0, *addr1;
+	int naddrs0, naddrs1;
+
+	naddrs0 = naddrs1 = 0;
+
+	TAILQ_FOREACH(addr0, &res0->hr_remote, r_next) {
+		TAILQ_FOREACH(addr1, &res1->hr_remote, r_next) {
+			if (strcmp(addr0->r_addr, addr1->r_addr) == 0)
+				break;
+		}
+		if (addr1 == NULL)
+			return (1);
+		naddrs0++;
+	}
+	TAILQ_FOREACH(addr1, &res1->hr_remote, r_next) {
+		naddrs1++;
+	}
+	return (naddrs0 - naddrs1);
+}
+
+static int
+friendscmp(const struct hast_resource *res0, const struct hast_resource *res1)
+{
+	struct hast_address *friend0, *friend1;
+	int nfriends0, nfriends1;
+
+	nfriends0 = nfriends1 = 0;
+	
+	TAILQ_FOREACH(friend0, &res0->hr_friends, a_next) {
+		TAILQ_FOREACH(friend1, &res1->hr_friends, a_next) {
+			if (strcmp(friend0->a_addr, friend1->a_addr) == 0)
+				break;
+		}
+		if (friend1 == NULL)
+			return (1);
+		nfriends0++;
+	}
+	TAILQ_FOREACH(friend1, &res1->hr_friends, a_next) {
+		nfriends1++;
+	}
+	return (nfriends0 - nfriends1);
+}
+
+static bool
+resource_needs_restart(const struct hast_resource *res0,
+    const struct hast_resource *res1)
+{
+
+	assert(strcmp(res0->hr_name, res1->hr_name) == 0);
+
+	if (strcmp(res0->hr_exec, res1->hr_exec) != 0)
+		return (true);
+
+	if (res0->hr_role == HAST_ROLE_INIT ||
+	    res0->hr_role == HAST_ROLE_SECONDARY ||
+	    res0->hr_role == HAST_ROLE_WATCHDOG) {
+		if (res0->hr_timeout != res1->hr_timeout)
+			return (true);
+		if (res0->hr_heartbeat_interval != res1->hr_heartbeat_interval)
+			return (true);		
+		if (remotecmp(res0, res1) != 0)
+			return (true);
+		if (friendscmp(res0, res1) != 0)
+			return (true);
+	}
+	return (false);
+}
+
+static bool
+resource_needs_reload(const struct hast_resource *res0,
+    const struct hast_resource *res1)
+{
+
+	assert(strcmp(res0->hr_name, res1->hr_name) == 0);
+	assert(strcmp(res0->hr_exec, res1->hr_exec) == 0);
+
+	if (res0->hr_role != HAST_ROLE_PRIMARY)
+		return (false);
+
+	if (res0->hr_timeout != res1->hr_timeout)
+		return (true);
+	if (res0->hr_local_attempts_max != res1->hr_local_attempts_max)
+		return (true);
+	if (res0->hr_heartbeat_interval != res1->hr_heartbeat_interval)
+		return (true);
+	if (res0->hr_priority != res1->hr_priority)
+		return (true);
+	if (remotecmp(res0, res1) != 0)
+		return (true);
+
+	return (false);
+}
+
 static void
 hastmon_reload(void)
 {
-	pjdlog_info("Reload is not implemented yet.");
+	struct hastmon_config *newcfg;
+	struct hast_resource *res;
+	struct hast_resource *nres, *cres, *tres;
+	struct hast_address *friend;
+	int restart;
+	uint8_t role;
+
+	pjdlog_info("Reloading configuration...");
+
+	newcfg = yy_config_parse(cfgpath, false);
+	if (newcfg == NULL)
+		goto failed;
+
+	/*
+	 * Check if control address has changed.
+	 */
+	if (strcmp(cfg->hc_controladdr, newcfg->hc_controladdr) != 0) {
+		if (proto_server(newcfg->hc_controladdr,
+		    &newcfg->hc_controlconn) < 0) {
+			pjdlog_errno(LOG_ERR,
+			    "Unable to listen on control address %s",
+			    newcfg->hc_controladdr);
+			goto failed;
+		}
+	}
+	/*
+	 * Check if listen address has changed.
+	 */
+	if (strcmp(cfg->hc_listenaddr, newcfg->hc_listenaddr) != 0) {
+		if (proto_server(newcfg->hc_listenaddr,
+		    &newcfg->hc_listenconn) < 0) {
+			pjdlog_errno(LOG_ERR, "Unable to listen on address %s",
+			    newcfg->hc_listenaddr);
+			goto failed;
+		}
+	}
+	/*
+	 * Only when both control and listen sockets are successfully
+	 * initialized switch them to new configuration.
+	 */
+	if (newcfg->hc_controlconn != NULL) {
+		pjdlog_info("Control socket changed from %s to %s.",
+		    cfg->hc_controladdr, newcfg->hc_controladdr);
+		proto_close(cfg->hc_controlconn);
+		cfg->hc_controlconn = newcfg->hc_controlconn;
+		newcfg->hc_controlconn = NULL;
+		strlcpy(cfg->hc_controladdr, newcfg->hc_controladdr,
+		    sizeof(cfg->hc_controladdr));
+	}
+	if (newcfg->hc_listenconn != NULL) {
+		pjdlog_info("Listen socket changed from %s to %s.",
+		    cfg->hc_listenaddr, newcfg->hc_listenaddr);
+		proto_close(cfg->hc_listenconn);
+		cfg->hc_listenconn = newcfg->hc_listenconn;
+		newcfg->hc_listenconn = NULL;
+		strlcpy(cfg->hc_listenaddr, newcfg->hc_listenaddr,
+		    sizeof(cfg->hc_listenaddr));
+	}
+	/*
+	 * Update friends.
+	 */
+	while ((friend = TAILQ_FIRST(&cfg->hc_friends)) != NULL) {
+		TAILQ_REMOVE(&cfg->hc_friends, friend, a_next);
+		free(friend);
+	}
+	while ((friend = TAILQ_FIRST(&newcfg->hc_friends)) != NULL) {
+		TAILQ_REMOVE(&newcfg->hc_friends, friend, a_next);
+		TAILQ_INSERT_TAIL(&cfg->hc_friends, friend, a_next);
+	}
+	/*
+	 * Stop and remove resources that were removed from the configuration.
+	 */
+	TAILQ_FOREACH_SAFE(cres, &cfg->hc_resources, hr_next, tres) {
+		TAILQ_FOREACH(nres, &newcfg->hc_resources, hr_next) {
+			if (strcmp(cres->hr_name, nres->hr_name) == 0)
+				break;
+		}
+		if (nres == NULL) {
+			control_set_role(cres, HAST_ROLE_INIT);
+			TAILQ_REMOVE(&cfg->hc_resources, cres, hr_next);
+			pjdlog_info("Resource %s removed.", cres->hr_name);
+			complaints_clear(cres);
+			yy_resource_free(cres);
+		}
+	}
+	/*
+	 * Move new resources to the current configuration.
+	 */
+	TAILQ_FOREACH_SAFE(nres, &newcfg->hc_resources, hr_next, tres) {
+		TAILQ_FOREACH(cres, &cfg->hc_resources, hr_next) {
+			if (strcmp(cres->hr_name, nres->hr_name) == 0)
+				break;
+		}
+		if (cres == NULL) {
+			TAILQ_REMOVE(&newcfg->hc_resources, nres, hr_next);
+			TAILQ_INSERT_TAIL(&cfg->hc_resources, nres, hr_next);
+			pjdlog_info("Resource %s added.", nres->hr_name);
+		}
+	}
+	/*
+	 * Deal with modified resources.
+	 * Depending on what has changed exactly we might want to perform
+	 * different actions.
+	 *
+	 * We do full resource restart in the following situations:
+	 * Resource role is INIT, SECONDARY or WATCHDOG.	 
+	 * Resource role is PRIMARY and path to exec or provider name
+	 * has changed.
+	 * In case of PRIMARY, the worker process will be killed and restarted,
+	 * which also means restarting the resource.
+	 *
+	 * We do just reload (send SIGHUP to worker process) if we act
+	 * as PRIMARY, but only remote address, and timings have
+	 * changed. Actually currently PRIMARY will die on SIGHUP too
+	 * but without stopping the resource. We could do "true"
+	 * reload, as hastd does, but do we have to?
+	 */
+	TAILQ_FOREACH_SAFE(nres, &newcfg->hc_resources, hr_next, tres) {
+		TAILQ_FOREACH(cres, &cfg->hc_resources, hr_next) {
+			if (strcmp(cres->hr_name, nres->hr_name) == 0)
+				break;
+		}
+		assert(cres != NULL);
+		if ((restart = resource_needs_restart(cres, nres)) ||
+		    resource_needs_reload(cres, nres)) {
+			role = cres->hr_role;
+			if (restart) {
+				pjdlog_info("Resource %s configuration was modified, restarting it.",
+				    cres->hr_name);
+				control_set_role(cres, HAST_ROLE_INIT);
+			} else { 
+				pjdlog_info("Resource %s configuration was modified, reloading it.",
+				    cres->hr_name);
+				if (cres->hr_workerpid != 0) {
+					if (kill(cres->hr_workerpid, SIGHUP) < 0) {
+						pjdlog_errno(LOG_WARNING,
+						    "Unable to send SIGHUP to worker process %u",
+						    (unsigned int)cres->hr_workerpid);
+					}
+				}
+			}
+			TAILQ_REMOVE(&cfg->hc_resources, cres, hr_next);
+			complaints_clear(cres);
+			yy_resource_free(cres);
+			TAILQ_REMOVE(&newcfg->hc_resources, nres, hr_next);
+			TAILQ_INSERT_TAIL(&cfg->hc_resources, nres, hr_next);
+			control_set_role(nres, role);
+		}
+	}
+	
+	yy_config_free(newcfg);
+	pjdlog_info("Configuration reloaded successfully.");
+	return;
+failed:
+	pjdlog_warning("Configuration not reloaded.");
 }
 
 static void

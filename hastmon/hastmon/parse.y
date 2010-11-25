@@ -223,27 +223,35 @@ yy_config_parse(const char *config, bool exitonerror)
 }
 
 void
+yy_resource_free(struct hast_resource *res)
+{
+	struct hast_address *addr;
+	struct hast_remote *remote;
+
+	while ((addr = TAILQ_FIRST(&res->hr_friends)) != NULL) {
+		TAILQ_REMOVE(&res->hr_friends, addr, a_next);
+		free(addr);
+	}
+	while ((remote = TAILQ_FIRST(&res->hr_remote)) != NULL) {
+		TAILQ_REMOVE(&res->hr_remote, remote, r_next);
+		free(remote);
+	}
+	free(res);
+}
+
+void
 yy_config_free(struct hastmon_config *config)
 {
 	struct hast_resource *res;
 	struct hast_address *addr;
-	struct hast_remote *remote;
 
 	while ((addr = TAILQ_FIRST(&config->hc_friends)) != NULL) {
 		TAILQ_REMOVE(&config->hc_friends, addr, a_next);
 		free(addr);
 	}
 	while ((res = TAILQ_FIRST(&config->hc_resources)) != NULL) {
-		while ((addr = TAILQ_FIRST(&res->hr_friends)) != NULL) {
-			TAILQ_REMOVE(&res->hr_friends, addr, a_next);
-			free(addr);
-		}
-		while ((remote = TAILQ_FIRST(&res->hr_remote)) != NULL) {
-			TAILQ_REMOVE(&res->hr_remote, remote, r_next);
-			free(remote);
-		}
 		TAILQ_REMOVE(&config->hc_resources, res, hr_next);
-		free(res);
+		yy_resource_free(res);
 	}
 	free(config);
 }

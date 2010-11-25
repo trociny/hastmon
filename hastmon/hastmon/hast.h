@@ -205,6 +205,7 @@ struct hast_complaint {
 };
 
 struct hastmon_config *yy_config_parse(const char *config, bool exitonerror);
+void yy_resource_free(struct hast_resource *res);
 void yy_config_free(struct hastmon_config *config);
 
 void yyerror(const char *);
