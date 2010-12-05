@@ -548,8 +548,8 @@ listen_accept(void)
 		/* XXX: Type is missed. But this ok for now. */
 	}
 	if (type == HASTREQ_TYPE_CONTROL) {
-		control_handle_common(cfg, conn, nvin);
-		goto close; 
+		control_handle_common(cfg, conn, nvin, true);
+		goto close;
 	}
 
 	resname = nv_get_string(nvin, "resource");
@@ -605,7 +605,8 @@ listen_accept(void)
 	TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 		if (proto_address_match(conn, remote->r_addr))
 			break;
-	if (friend == NULL && remote == NULL) {
+	if ((friend == NULL && remote == NULL) ||
+	    !auth_confirm(nvin, conn, &res->hr_key)) {
 		pjdlog_error("Client %s has no access to the resource.", raddr);
 		nv_add_stringf(nverr, "errmsg", "No access to the resource.");
 		goto fail;

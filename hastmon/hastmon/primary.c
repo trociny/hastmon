@@ -52,6 +52,7 @@ __FBSDID("$FreeBSD$");
 
 #include <nv.h>
 
+#include "auth.h"
 #include "control.h"
 #include "event.h"
 #include "hast.h"
@@ -382,6 +383,7 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 	nvout = nv_alloc();
 	nv_add_string(nvout, res->hr_name, "resource");
 	nv_add_int32(nvout, res->hr_priority, "priority");
+	auth_add(nvout, out, &res->hr_key);
 	if (nv_error(nvout) != 0) {
 		pjdlog_common(LOG_WARNING, 0, nv_error(nvout),
 		    "Unable to allocate header for connection with %s",
@@ -449,6 +451,7 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 	if (proto_timeout(in, res->hr_timeout) < 0)
 		pjdlog_errno(LOG_WARNING, "Unable to set connection timeout");
 	nvout = nv_alloc();
+	auth_add(nvout, in, &res->hr_key);
 	nv_add_string(nvout, res->hr_name, "resource");
 	nv_add_uint8_array(nvout, remote->r_token, sizeof(remote->r_token),
 	    "token");

@@ -16,6 +16,7 @@ SRCS+=	subr.c
 SRCS+=	token.l
 SRCS+=	y.tab.h
 SRCS+=	watchdog.c
+SRCS+=	auth.c
 MAN=	hastmon.8 hastmon.conf.5
 
 BINDIR=${PREFIX}/sbin

@@ -47,6 +47,7 @@
 
 #include <pjdlog.h>
 
+#include "auth.h"
 #include "hast.h"
 
 extern int depth;
@@ -67,6 +68,7 @@ static int depth0_attempts;
 static int depth0_heartbeat_interval;
 static int depth0_complaint_count;
 static int depth0_complaint_interval;
+static struct hast_auth depth0_key;
 
 extern void yyrestart(FILE *);
 
@@ -136,6 +138,8 @@ yy_config_parse(const char *config, bool exitonerror)
 	strlcpy(depth0_control, HAST_CONTROL, sizeof(depth0_control));
 	strlcpy(depth0_listen, HAST_LISTEN, sizeof(depth0_listen));
 	depth0_exec[0] = '\0';
+	depth0_key.au_algo = HAST_AUTH_UNDEF;
+	depth0_key.au_secret[0] = '\0';
 
 	lconfig = calloc(1, sizeof(*lconfig));
 	if (lconfig == NULL) {
@@ -194,6 +198,13 @@ yy_config_parse(const char *config, bool exitonerror)
 			 * Use global or default setting.
 			 */
 			curres->hr_heartbeat_interval = depth0_heartbeat_interval;
+		}
+		if (curres->hr_key.au_algo == HAST_AUTH_UNDEF) {
+			/*
+			 * Key is not set at resource-level.
+			 * Use global setting.
+			 */
+			curres->hr_key = depth0_key;
 		}
 		if (curres->hr_complaint_critical_cnt == -1) {
 			/*
@@ -257,9 +268,9 @@ yy_config_free(struct hastmon_config *config)
 }
 %}
 
-%token ATTEMPTS CB COMPLAINT_COUNT COMPLAINT_INTERVAL CONTROL EXEC
-%token FRIENDS HEARTBEAT_INTERVAL LISTEN NUM ON OB PORT PRIORITY 
-%token REMOTE RESOURCE STR TIMEOUT
+%token ALGORITHM ATTEMPTS CB COMPLAINT_COUNT COMPLAINT_INTERVAL CONTROL EXEC
+%token FRIENDS HEARTBEAT_INTERVAL KEY LISTEN NUM ON OB PORT PRIORITY 
+%token REMOTE RESOURCE SECRET STR TIMEOUT
 
 %union
 {
@@ -289,6 +300,8 @@ statement:
 	friends_statement
 	|
 	heartbeat_interval_statement
+	|
+	key_statement
 	|
 	complaint_count_statement
 	|
@@ -521,6 +534,76 @@ node_entry:
 	complaint_interval_statement
 	;
 
+key_statement:		KEY OB key_entries CB
+	;
+
+key_entries:
+	|
+	key_entries key_entry
+	;
+
+key_entry:
+	algorithm_statement
+	|
+	secret_statement
+	;
+
+algorithm_statement:		ALGORITHM STR
+	{
+		switch (depth) {
+		case 1:
+			if ((depth0_key.au_algo = str2algo($2)) == HAST_AUTH_UNDEF) {
+				pjdlog_error("Unknown algorithm: %s.", $2);
+				free($2);
+				return (1);
+			}
+			break;
+		case 2:
+			if (curres == NULL)
+				break;
+			if ((curres->hr_key.au_algo = str2algo($2)) == HAST_AUTH_UNDEF) {
+				pjdlog_error("Unknown algorithm: %s.", $2);
+				free($2);
+				return (1);
+			}
+			break;
+		default:
+			assert(!"key at wrong depth level");
+		}
+		free($2);
+	}
+	;
+
+secret_statement:		SECRET STR
+	{
+		switch (depth) {
+		case 1:
+			if (strlcpy(depth0_key.au_secret, $2,
+				sizeof(depth0_key.au_secret)) >=
+			    sizeof(depth0_key.au_secret)) {
+				pjdlog_error("Secret is too long.");
+				free($2);
+				return (1);
+			}
+			break;
+		case 2:
+			if (curres == NULL)
+				break;
+			if (strlcpy(curres->hr_key.au_secret, $2,
+				sizeof(depth0_key.au_secret)) >=
+			    sizeof(depth0_key.au_secret)) {
+				pjdlog_error("Secret is too long.");
+				free($2);
+				return (1);
+			}
+			break;
+		default:
+			assert(!"key at wrong depth level");
+		}
+		free($2);
+	}
+	;
+
 resource_statement:	RESOURCE resource_start OB resource_entries CB
 	{
 		if (curres != NULL) {
@@ -585,6 +668,8 @@ resource_start:	STR
 		TAILQ_INIT(&curres->hr_friends);
 		curres->hr_remote_cnt = 0;
 		TAILQ_INIT(&curres->hr_remote);
+		curres->hr_key.au_algo = HAST_AUTH_UNDEF;
+		curres->hr_key.au_secret[0] = '\0';
 		curres->hr_complaint_critical_cnt = -1;
 		curres->hr_complaint_interval = -1;
 		TAILQ_INIT(&curres->hr_complaints);
@@ -604,6 +689,8 @@ resource_entry:
 	friends_statement
 	|
 	heartbeat_interval_statement
+	|
+	key_statement
 	|
 	complaint_count_statement
 	|

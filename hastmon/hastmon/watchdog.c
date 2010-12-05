@@ -486,6 +486,7 @@ remote_send_thread(void *arg)
 		}
 		/* Send the command to the server... */
 		nv = nv_alloc();
+		auth_add(nv, conn, &res->hr_key);
 		if (hio->hio_cmd == HIO_COMPLAINT) {
 			nv_add_string(nv, res->hr_name, "resource");
 			nv_add_uint8(nv, HASTREQ_TYPE_COMPLAINT, "type");

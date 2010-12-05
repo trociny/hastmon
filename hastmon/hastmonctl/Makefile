@@ -15,6 +15,7 @@ SRCS+=	proto.c proto_common.c proto_tcp4.c proto_uds.c
 SRCS+=	token.l
 SRCS+=	subr.c
 SRCS+=	y.tab.h
+SRCS+=	auth.c
 MAN=	hastmonctl.8
 
 BINDIR=${PREFIX}/sbin

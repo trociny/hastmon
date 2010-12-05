@@ -66,6 +66,12 @@ complaint_count <number>
 complaint_interval <seconds>
 exec <path>
 
+key {
+        algorithm <name>
+        secret <string>
+}
+
+
 on <node> {
 	# Node section
         control <addr>
@@ -93,10 +99,15 @@ resource <name> {
 	rc <path>
 	exec <path>
 	timeout <seconds>
-        attempts <number>
-        heartbeat_interval <seconds>
-        complaint_count <number>
-        complaint_interval <seconds>
+	attempts <number>
+	heartbeat_interval <seconds>
+	complaint_count <number>
+	complaint_interval <seconds>
+
+	key {
+		algorithm <name>
+		secret <string>
+	}
 
 	on <node> {
 		# Resource-node section
@@ -177,11 +188,6 @@ unix:///var/run/hastmonctl
 .Pp
 The default value is
 .Pa uds:///var/run/hastmonctl .
-.It Ic friends Aq addr ...
-.Pp
-List of addresses (separated by space) of hosts that can connect to
-the node.
-Format is the same as for the
 .Ic listen
 statement.
 .It Ic exec Aq path
@@ -248,11 +254,35 @@ It can be one of:
 .Ar secondary ,
 .Ar primary .
 .Pp
+.It Ic friends Aq addr ...
+.Pp
+List of addresses (separated by space) of hosts that can connect to
+the node.
+Format is the same as for the
 .It Ic heartbeat_interval Aq seconds
 .Pp
 Interval between heartbeats (checks) in seconds.
 The default value is
 .Va 10 .
+.It Ic key
+.Pp
+
+Secret used for node authentication. If not specified host access is
+controlled only by
+.Ic remote
+and 
+.Ic friends
+settings.
+.Bl -tag -width ".Ic xxxx"
+.It Ic algorithm Aq name
+.Pp
+Signature algorithm being used (MD5, SHA1, SHA256, RIPEMD160).
+.Pp
+.It Ic secret Aq string
+.Pp
+Actual authentication key.
+.Pp
+.El
 .It Ic listen Aq addr
 .Pp
 Address to listen on in form of:
@@ -272,11 +302,6 @@ tcp4://0.0.0.0:8458
 .Pp
 The default value is
 .Pa tcp4://0.0.0.0:8458 .
-.It Ic timeout Aq seconds
-.Pp
-Connection timeout in seconds.
-The default value is
-.Va 5 .
 .It Ic priority Aq number
 .Pp
 Node's priority (the lower number the higher priority).
@@ -304,6 +329,11 @@ check resource status on the nodes and send complaints.
 + .Va none
 + can be used when the remote address is not yet known (eg. the other node is not
 + set up yet).
+.It Ic timeout Aq seconds
+.Pp
+Connection timeout in seconds.
+The default value is
+.Va 5 .
 .El
 .Sh FILES
 .Bl -tag -width ".Pa /var/run/hastmonctl" -compact
