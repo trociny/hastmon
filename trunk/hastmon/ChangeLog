@@ -1,3 +1,9 @@
+hastmon (0.X.X)
+
+  * Authentication by key.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 201X/XX/XX
+
 hastmon (0.2.0)
 
   * Bug fixes, cleaning up, tuning. It looks like hastmon is ready for

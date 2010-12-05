@@ -292,7 +292,7 @@ control_handle(struct hastmon_config *cfg)
 		goto close;
 	}
 
-	control_handle_common(cfg, conn, nvin);
+	control_handle_common(cfg, conn, nvin, false);
 
 close:
 	if (nvin != NULL)
@@ -301,8 +301,51 @@ close:
 
 }
 
+bool
+control_auth_confirm(struct hastmon_config *cfg, struct nv *nv,
+    struct proto_conn *conn, const char *str)
+{
+	struct hast_resource *res;
+	const char *name;
+	unsigned int ii;
+	
+	assert(cfg != NULL);
+	assert(nv != NULL);
+	assert(conn != NULL);
+	assert(str != NULL);
+	
+	if (strcmp(str, "all") == 0) {
+		
+		/* All configured resources. */
+		
+		TAILQ_FOREACH(res, &cfg->hc_resources, hr_next) {
+			if (!auth_confirm(nv, conn, &res->hr_key))
+				return false;
+		}
+	} else {
+		/* Only selected resources. */
+		
+		for (ii = 0; ; ii++) {
+			name = nv_get_string(nv, "resource%u", ii);
+			if (name == NULL)
+				break;
+			TAILQ_FOREACH(res, &cfg->hc_resources, hr_next) {
+				if (strcmp(res->hr_name, name) == 0)
+					if (!auth_confirm(nv, conn, &res->hr_key))
+						return false;
+					else
+						break;
+			}
+			if (res == NULL)
+				return false;
+		}
+	}
+	return true;
+}
+
 void
-control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn, struct nv *nvin)
+control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
+    struct nv *nvin, bool auth)
 {
 
 	struct nv *nvout;
@@ -310,10 +353,10 @@ control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn, struc
 	const char *str;
 	uint8_t cmd, role;
 	int error;
-
+	
 	nvout = NULL;
 	role = HAST_ROLE_UNDEF;
-
+	
 	/* Obtain command code. 0 means that nv_get_uint8() failed. */
 	cmd = nv_get_uint8(nvin, "cmd");
 	if (cmd == 0) {
@@ -321,7 +364,6 @@ control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn, struc
 		error = EHAST_INVALID;
 		goto close;
 	}
-
 	/* Allocate outgoing nv structure. */
 	nvout = nv_alloc();
 	if (nvout == NULL) {
@@ -338,6 +380,11 @@ control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn, struc
 		error = EHAST_INVALID;
 		goto fail;
 	}
+	if (auth && !control_auth_confirm(cfg, nvin, conn, str)) {
+		pjdlog_error("Authentication failed.");
+		error = EHAST_AUTHFAILED;
+		goto close;
+	}	
 	if (cmd == HASTCTL_SET_ROLE) {
 		role = nv_get_uint8(nvin, "role");
 		switch (role) {

@@ -46,7 +46,8 @@ void child_cleanup(struct hast_resource *res);
 void control_set_role(struct hast_resource *res, uint8_t role);
 
 void control_handle(struct hastmon_config *cfg);
-void control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn, struct nv *nvin);
+void control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
+    struct nv *nvin, bool auth);
 
 void *control_send_event_status(struct hast_resource *res, int event, int status);
 

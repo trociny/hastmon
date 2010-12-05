@@ -46,6 +46,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "auth.h"
 #include "proto.h"
 
 #define	HAST_PROTO_VERSION	0
@@ -55,6 +56,7 @@
 #define	EHAST_INVALID		2
 #define	EHAST_NOMEMORY		3
 #define	EHAST_UNIMPLEMENTED	4
+#define	EHAST_AUTHFAILED	5
 
 #define HASTREQ_TYPE_UNKNOWN	0
 #define HASTREQ_TYPE_CONTROL	1
@@ -94,6 +96,7 @@
 
 #define	HAST_ADDRSIZE	1024
 #define	HAST_TOKEN_SIZE	16
+#define HAST_KEYMAX	1024
 
 struct hastmon_config {
 	/* Address to communicate with hastctl(8). */
@@ -147,6 +150,9 @@ struct hast_resource {
 
 	/* Per resource list of addresses that can connect to us. */
 	TAILQ_HEAD(, hast_address) hr_friends;
+
+	/* Key used for authentication. */
+	struct hast_auth hr_key;
 	
 	/* Number of remote components. */
 	int hr_remote_cnt;

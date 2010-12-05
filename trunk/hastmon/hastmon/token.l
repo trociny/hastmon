@@ -55,6 +55,9 @@ attempts		{ DP; return ATTEMPTS; }
 heartbeat_interval	{ DP; return HEARTBEAT_INTERVAL; }
 friends			{ DP; return FRIENDS; }
 remote			{ DP; return REMOTE; }
+key			{ DP; return KEY; }
+algorithm	       	{ DP; return ALGORITHM; }
+secret			{ DP; return SECRET; }
 complaint_count		{ DP; return COMPLAINT_COUNT; }
 complaint_interval	{ DP; return COMPLAINT_INTERVAL; }
 on			{ DP; return ON; }
