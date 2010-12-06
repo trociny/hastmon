@@ -2,6 +2,8 @@ hastmon (0.X.X)
 
   * Authentication by key.
 
+  * Build using mk-configure.
+
 -- Mikolaj Golub <to.my.trociny@gmail.com> 201X/XX/XX
 
 hastmon (0.2.0)

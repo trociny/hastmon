@@ -1,7 +1,9 @@
 # $FreeBSD$
 
-.include <bsd.own.mk>
+SUBDIR+=	hastmon
+SUBDIR+=	hastmonctl
+SUBDIR+=	etc
 
-SUBDIR=	hastmon hastmonctl etc
-
-.include <bsd.subdir.mk>
+.include <mkc.own.mk>
+.include "version.mk"
+.include <mkc.subdir.mk>

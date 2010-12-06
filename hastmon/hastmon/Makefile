@@ -1,7 +1,5 @@
 # $FreeBSD$
 
-.include <bsd.own.mk>
-
 PREFIX?=	/usr/local
 
 PROG=	hastmon
@@ -23,7 +21,7 @@ BINDIR=${PREFIX}/sbin
 MANDIR=${PREFIX}/man/man
 CFLAGS+=-I${.CURDIR}
 CFLAGS+=-DINET
-.if ${MK_INET6_SUPPORT} != "no"
+.if "${MK_INET6_SUPPORT}" != "no"
 CFLAGS+=-DINET6
 .endif
 # This is needed to have WARNS > 1.
@@ -31,14 +29,16 @@ CFLAGS+=-DYY_NO_UNPUT
 
 DPADD=	${LIBGEOM} ${LIBBSDXML} ${LIBSBUF} ${LIBL} ${LIBPTHREAD} ${LIBUTIL}
 LDADD=	-lbsdxml -lsbuf -ll -lpthread -lutil
-.if ${MK_OPENSSL} != "no"
+.if "${MK_OPENSSL}" != "no"
 DPADD+=	${LIBCRYPTO}
 LDADD+=	-lcrypto
 CFLAGS+=-DHAVE_CRYPTO
 .endif
 
+YFLAGS+=-d
 YFLAGS+=-v
 
 CLEANFILES=y.tab.c y.tab.h y.output
 
-.include <bsd.prog.mk>
+.include <mkc.own.mk>
+.include <mkc.prog.mk>
