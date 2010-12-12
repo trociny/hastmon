@@ -16,6 +16,7 @@ SRCS+=	token.l
 SRCS+=	y.tab.h
 SRCS+=	watchdog.c
 SRCS+=	auth.c
+SRCS+=	pidfile.c
 MAN=	hastmon.8 hastmon.conf.5
 
 BINDIR=${PREFIX}/sbin
@@ -29,7 +30,7 @@ CFLAGS+=-DINET6
 CFLAGS+=-DYY_NO_UNPUT
 
 DPADD=	${LIBGEOM} ${LIBBSDXML} ${LIBSBUF} ${LIBL} ${LIBPTHREAD} ${LIBUTIL}
-LDADD=	-lbsdxml -lsbuf -ll -lpthread -lutil
+LDADD=	-lbsdxml -lsbuf -ll -lpthread
 .if "${MK_OPENSSL}" != "no"
 DPADD+=	${LIBCRYPTO}
 LDADD+=	-lcrypto

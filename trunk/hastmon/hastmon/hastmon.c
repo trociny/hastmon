@@ -40,7 +40,6 @@
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
-#include <libutil.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -58,6 +57,7 @@
 #include "hast_proto.h"
 #include "hastmon.h"
 #include "hooks.h"
+#include "pidfile.h"
 #include "subr.h"
 
 /* Path to configuration file. */
