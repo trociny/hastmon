@@ -26,8 +26,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _PIDFILE_H
-#define _PIDFILE_H
+#ifndef _PIDFILE_H_
+#define _PIDFILE_H_
 
 #include <sys/param.h>
 
