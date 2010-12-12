@@ -41,6 +41,8 @@
 
 #include <ebuf.h>
 
+#include "compat.h"
+
 struct nv;
 
 struct nv *nv_alloc(void);
