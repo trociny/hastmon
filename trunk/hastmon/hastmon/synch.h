@@ -35,7 +35,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <pthread.h>
+#ifdef HAVE_HEADER_PTHREAD_NP_H
 #include <pthread_np.h>
+#endif
 #include <stdbool.h>
 #include <time.h>
 
@@ -80,12 +82,15 @@ mtx_unlock(pthread_mutex_t *lock)
 	error = pthread_mutex_unlock(lock);
 	assert(error == 0);
 }
+#ifdef HAVE_FUNC1_PTHREAD_MUTEX_ISOWNED_NP_PTHREAD_NP_H
+#define HAVE_MTX_OWNED
 static __inline bool
 mtx_owned(pthread_mutex_t *lock)
 {
 
 	return (pthread_mutex_isowned_np(lock) != 0);
 }
+#endif
 
 static __inline void
 rw_init(pthread_rwlock_t *lock)

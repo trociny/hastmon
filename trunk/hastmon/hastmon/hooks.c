@@ -171,7 +171,9 @@ hook_find(pid_t pid)
 {
 	struct hookproc *hp;
 
+#ifdef HAVE_MTX_OWNED	
 	assert(mtx_owned(&hookprocs_lock));
+#endif
 
 	TAILQ_FOREACH(hp, &hookprocs, hp_next) {
 		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
@@ -189,8 +191,10 @@ hook_findbycaller(struct hook_caller *caller)
 {
 	struct hookproc *hp;
 
+#ifdef HAVE_MTX_OWNED
 	assert(mtx_owned(&hookprocs_lock));
-
+#endif
+	
 	if (caller == NULL)
 		return NULL;
 
@@ -328,7 +332,9 @@ hook_remove(struct hookproc *hp)
 
 	assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
 	assert(hp->hp_pid > 0);
+#ifdef HAVE_MTX_OWNED
 	assert(mtx_owned(&hookprocs_lock));
+#endif
 
 	TAILQ_REMOVE(&hookprocs, hp, hp_next);
 	hp->hp_magic = HOOKPROC_MAGIC_ALLOCATED;
