@@ -454,7 +454,7 @@ hook_execv(struct hook_caller *caller, const char *path, va_list ap)
 		return;
 
 	memset(args, 0, sizeof(args));
-	args[0] = basename(path);
+	args[0] = basename((char *)path);
 	for (ii = 1; ii < sizeof(args) / sizeof(args[0]); ii++) {
 		args[ii] = va_arg(ap, char *);
 		if (args[ii] == NULL)
