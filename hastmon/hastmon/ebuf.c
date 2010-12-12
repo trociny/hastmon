@@ -28,8 +28,9 @@
  */
 
 #include <sys/cdefs.h>
-
 #include <sys/param.h>
+
+#include <machine/vmparam.h>
 
 #include <assert.h>
 #include <errno.h>
