@@ -218,4 +218,40 @@ void yyerror(const char *);
 int yylex(void);
 int yyparse(void);
 
+#ifndef __printflike
+/*
+ * Taken from FreeBSD's sys/cdefs.h
+ */
+
+/*
+ * Compiler-dependent macros to declare that functions take printf-like
+ * or scanf-like arguments.  They are null except for versions of gcc
+ * that are known to support the features properly (old versions of gcc-2
+ * didn't permit keeping the keywords out of the application namespace).
+ */
+#if !__GNUC_PREREQ__(2, 7) && !defined(__INTEL_COMPILER)
+#define	__printflike(fmtarg, firstvararg)
+#define	__scanflike(fmtarg, firstvararg)
+#define	__format_arg(fmtarg)
+#else
+#define	__printflike(fmtarg, firstvararg) \
+	    __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+#define	__scanflike(fmtarg, firstvararg) \
+	    __attribute__((__format__ (__scanf__, fmtarg, firstvararg)))
+#define	__format_arg(fmtarg)	__attribute__((__format_arg__ (fmtarg)))
+#endif
+#endif /* !__printflike */
+
+#ifndef __dead2
+#ifdef lint
+#define	__dead2
+#else
+#if !__GNUC_PREREQ__(2, 5) && !defined(__INTEL_COMPILER)
+#define	__dead2
+#else
+#define	__dead2		__attribute__((__noreturn__))
+#endif
+#endif
+#endif /* !__dead2 */
+
 #endif	/* !_HAST_H_ */
