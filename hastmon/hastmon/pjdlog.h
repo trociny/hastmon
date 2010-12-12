@@ -38,6 +38,8 @@
 #include <sysexits.h>
 #include <syslog.h>
 
+#include "compat.h"
+
 #define	PJDLOG_MODE_STD		0
 #define	PJDLOG_MODE_SYSLOG	1
 
