@@ -34,7 +34,6 @@
 #define	_HASTMON_H_
 
 #include <sys/param.h>
-#include <libutil.h>
 
 #include <nv.h>
 
