@@ -1,5 +1,3 @@
-# $FreeBSD$
-
 .PATH:	${.CURDIR}/../hastmon
 
 PREFIX?=	/usr/local
