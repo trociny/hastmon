@@ -18,7 +18,7 @@ SRCS+=	auth.c
 MAN=	hastmonctl.8
 
 BINDIR=${PREFIX}/sbin
-MANDIR=${PREFIX}/man/man
+MANDIR=${PREFIX}/man
 CFLAGS+=-I${.CURDIR}/../hastmon
 CFLAGS+=-DINET
 .if "${MK_INET6_SUPPORT}" != "no"
