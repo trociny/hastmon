@@ -34,7 +34,6 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/refcount.h>
 #include <sys/stat.h>
 
 #include <assert.h>
@@ -60,6 +59,7 @@
 #include "hooks.h"
 #include "proto.h"
 #include "pjdlog.h"
+#include "refcount.h"
 #include "subr.h"
 #include "synch.h"
 
