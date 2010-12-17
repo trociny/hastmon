@@ -48,6 +48,10 @@ __FBSDID("$FreeBSD: src/lib/libutil/pidfile.c,v 1.9.2.1 2009/08/03 08:13:06 kens
 
 #include "pidfile.h"
 
+#ifndef EDOOFUS
+#define EDOOFUS	EINVAL
+#endif
+
 int
 flopen(const char *path, int flags, ...)
 {
