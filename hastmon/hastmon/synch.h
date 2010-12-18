@@ -136,8 +136,9 @@ rw_unlock(pthread_rwlock_t *lock)
 static __inline void
 cv_init(pthread_cond_t *cv)
 {
-	pthread_condattr_t attr;
 	int error;
+#ifdef HAVE_FUNC2_PTHREAD_CONDATTR_SETCLOCK_PTHREAD_H
+	pthread_condattr_t attr;
 
 	error = pthread_condattr_init(&attr);
 	assert(error == 0);
@@ -147,6 +148,10 @@ cv_init(pthread_cond_t *cv)
 	assert(error == 0);
 	error = pthread_condattr_destroy(&attr);
 	assert(error == 0);
+#else
+	error = pthread_cond_init(cv, NULL);
+	assert(error == 0);
+#endif
 }
 static __inline void
 cv_wait(pthread_cond_t *cv, pthread_mutex_t *lock)

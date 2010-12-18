@@ -5,6 +5,8 @@ MKC_CHECK_FUNCS1+=	pthread_mutex_isowned_np:pthread_np.h
 
 MKC_CHECK_FUNCS2+=	arc4random_buf:stdlib.h
 
+MKC_CHECK_FUNCS2+=	pthread_condattr_setclock:pthread.h
+
 PROG=	hastmon
 SRCS+=	control.c
 SRCS+=	ebuf.c event.c
