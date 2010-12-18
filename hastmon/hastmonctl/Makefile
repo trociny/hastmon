@@ -27,10 +27,7 @@ CFLAGS+=-DINET6
 # This is needed to have WARNS > 1.
 CFLAGS+=-DYY_NO_UNPUT
 
-DPADD=	${LIBL}
-LDADD=	-ll
 .if "${MK_OPENSSL}" != "no"
-DPADD+=	${LIBCRYPTO}
 LDADD+=	-lcrypto
 CFLAGS+=-DHAVE_CRYPTO
 .endif
@@ -38,7 +35,7 @@ CFLAGS+=-DHAVE_CRYPTO
 YFLAGS+=-d
 YFLAGS+=-v
 
-CLEANFILES=y.tab.c y.tab.h y.output
+CLEANFILES=y.tab.c y.tab.h y.output _*
 
 .include <mkc.own.mk>
 .include <mkc.prog.mk>
