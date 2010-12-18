@@ -3,6 +3,8 @@ PREFIX?=	/usr/local
 MKC_CHECK_HEADERS+=	pthread_np.h
 MKC_CHECK_FUNCS1+=	pthread_mutex_isowned_np:pthread_np.h
 
+MKC_CHECK_FUNCS2+=	arc4random_buf:stdlib.h
+
 PROG=	hastmon
 SRCS+=	control.c
 SRCS+=	ebuf.c event.c
