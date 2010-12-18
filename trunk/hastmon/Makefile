@@ -1,8 +1,12 @@
 # $FreeBSD$
 
-SUBDIR+=	hastmon
-SUBDIR+=	hastmonctl
-SUBDIR+=	etc
+PROJECTNAME=	hastmon
+
+SUBPRJ+=	hastmon
+SUBPRJ+=	hastmonctl
+SUBPRJ+=	etc
+
+CLEANFILES=	_*
 
 .include <mkc.own.mk>
 .include "version.mk"
