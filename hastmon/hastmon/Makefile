@@ -29,8 +29,10 @@ CFLAGS+=-DINET6
 # This is needed to have WARNS > 1.
 CFLAGS+=-DYY_NO_UNPUT
 
-DPADD=	${LIBGEOM} ${LIBBSDXML} ${LIBSBUF} ${LIBL} ${LIBPTHREAD} ${LIBUTIL}
-LDADD=	-lbsdxml -lsbuf -ll -lpthread
+DPADD=	${LIBBSDXML} ${LIBSBUF} ${LIBL} ${LIBPTHREAD}
+#LDADD=	-lbsdxml -lsbuf -ll -lpthread
+LDADD=	-lexpat -ll -lpthread
+LDFLAGS+=	-L /usr/pkg/lib -L /usr/local/lib
 .if "${MK_OPENSSL}" != "no"
 DPADD+=	${LIBCRYPTO}
 LDADD+=	-lcrypto
