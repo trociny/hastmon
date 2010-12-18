@@ -472,6 +472,22 @@ terminate_worker(struct hast_resource *res, int sig)
 	child_cleanup(res);
 }
 
+#ifndef HAVE_FUNC2_ARC4RANDOM_BUF_STDLIB_H
+static void
+arc4random_buf(void *buf, size_t n)
+{
+	char *p;
+	int ii;
+	uint32_t rnd;
+
+	for (p = buf, ii = 0; ii < n; ii++) {
+		if (ii % sizeof(rnd) == 0)
+			rnd = arc4random();
+		p[ii] = *((char *)&rnd + ii % sizeof(rnd));
+	}
+}
+#endif
+
 static void
 listen_accept(void)
 {
