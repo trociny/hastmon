@@ -5,6 +5,9 @@ PREFIX?=	/usr/local
 MKC_CHECK_HEADERS+=	pthread_np.h
 MKC_CHECK_FUNCS1+=	pthread_mutex_isowned_np:pthread_np.h
 
+MKC_CHECK_HEADERS+=	machine/vmparam.h sys/user.h
+MKC_CHECK_HEADERS+=	sys/endian.h
+
 PROG=	hastmonctl
 SRCS+=	ebuf.c
 SRCS+=	hast_proto.c hastmonctl.c
