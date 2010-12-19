@@ -850,7 +850,7 @@ remote_recv_thread(void *arg)
 		error = nv_get_int16(nv, "error");
 		if (error != 0) {
 			/* Request failed on remote side. */
-			hio->hio_remote_status[ncomp].rs_error = 0;
+			hio->hio_remote_status[ncomp].rs_error = error;
 			nv_free(nv);
 			goto done_queue;
 		}
