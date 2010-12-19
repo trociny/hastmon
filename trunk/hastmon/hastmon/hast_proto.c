@@ -29,7 +29,9 @@
 
 #include <sys/cdefs.h>
 
+#ifdef HAVE_HEADER_SYS_ENDIAN_H
 #include <sys/endian.h>
+#endif
 
 #include <assert.h>
 #include <errno.h>
@@ -43,6 +45,10 @@
 #include <proto.h>
 
 #include "hast_proto.h"
+
+#ifndef ERPCMISMATCH
+#define ERPCMISMATCH	EINVAL	
+#endif
 
 struct hast_main_header {
 	/* Protocol version. */
