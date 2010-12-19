@@ -2,11 +2,13 @@
 
 PROJECTNAME=	hastmon
 
+CLEANFILES=	_*
+
 SUBPRJ+=	hastmon
 SUBPRJ+=	hastmonctl
 SUBPRJ+=	etc
 
-CLEANFILES=	_*
+MKC_REQD=	0.20.0
 
 .include <mkc.own.mk>
 .include "version.mk"
