@@ -100,12 +100,10 @@ isitme(const char *name)
 	 * At the end check if name is equal to our host's UUID.
 	 */
 	bufsize = sizeof(buf);
-	if (sysctlbyname("kern.hostuuid", buf, &bufsize, NULL, 0) < 0)
-		pjdlog_warning("sysctlbyname(kern.hostuuid) failed");
-	else
-		if (strcasecmp(buf, name) == 0)
-			return (1);
-
+	if ((sysctlbyname("kern.hostuuid", buf, &bufsize, NULL, 0) == 0) &&
+	    (strcasecmp(buf, name) == 0))
+		return (1);
+	
 	/*
 	 * Looks like this isn't about us.
 	 */
