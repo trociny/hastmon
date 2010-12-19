@@ -30,7 +30,11 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 
+#ifdef HAVE_HEADER_MACHINE_VMPARAM_H
 #include <machine/vmparam.h>
+#elif defined(HAVE_HEADER_SYS_USER_H)
+#include <sys/user.h>
+#endif
 
 #include <assert.h>
 #include <errno.h>

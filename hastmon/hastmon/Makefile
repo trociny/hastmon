@@ -7,6 +7,9 @@ MKC_CHECK_FUNCS2+=	arc4random_buf:stdlib.h
 
 MKC_CHECK_FUNCS2+=	pthread_condattr_setclock:pthread.h
 
+MKC_CHECK_HEADERS+=	machine/vmparam.h sys/user.h
+MKC_CHECK_HEADERS+=	sys/endian.h
+
 PROG=	hastmon
 SRCS+=	control.c
 SRCS+=	ebuf.c event.c
