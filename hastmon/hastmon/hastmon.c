@@ -791,14 +791,15 @@ main_loop(void)
 	struct hast_resource *res;
 	struct timeval seltimeout;
 	struct timespec sigtimeout;
-	int fd, maxfd, ret, signo;
+	int fd, maxfd, ret;
 	sigset_t mask;
+	siginfo_t info;
 	fd_set rfds;
 
 	seltimeout.tv_sec = REPORT_INTERVAL;
 	seltimeout.tv_usec = 0;
 	sigtimeout.tv_sec = 0;
-	sigtimeout.tv_nsec = 0;
+	sigtimeout.tv_nsec = 1; /* Workaround: NetBSD waits forever if timeout is 0. */
 
 	PJDLOG_VERIFY(sigemptyset(&mask) == 0);
 	PJDLOG_VERIFY(sigaddset(&mask, SIGHUP) == 0);
@@ -807,8 +808,8 @@ main_loop(void)
 	PJDLOG_VERIFY(sigaddset(&mask, SIGCHLD) == 0);
 
 	for (;;) {
-		while ((signo = sigtimedwait(&mask, NULL, &sigtimeout)) != -1) {
-			switch (signo) {
+		while ((ret = sigtimedwait(&mask, &info, &sigtimeout)) != -1) {
+			switch (info.si_signo) {
 			case SIGINT:
 			case SIGTERM:
 				sigexit_received = true;
@@ -825,7 +826,7 @@ main_loop(void)
 				assert(!"invalid condition");
 			}
 		}
-
+		
 		/* Setup descriptors for select(2). */
 		FD_ZERO(&rfds);
 		maxfd = fd = proto_descriptor(cfg->hc_controlconn);

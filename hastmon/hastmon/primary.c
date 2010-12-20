@@ -1031,7 +1031,7 @@ guard_thread(void *arg)
 	struct timespec timeout;
 	time_t lastcheck, now;
 	sigset_t mask;
-	int signo;
+	siginfo_t info;
 
 	ncomps = res->hr_remote_cnt;
 	lastcheck = time(NULL);
@@ -1043,10 +1043,10 @@ guard_thread(void *arg)
 
 	timeout.tv_sec = res->hr_heartbeat_interval;
 	timeout.tv_nsec = 0;
-	signo = -1;
+	info.si_signo = -1;
 
 	for (;;) {
-		switch (signo) {
+		switch (info.si_signo) {
 		case SIGHUP:
 			primary_reload();
 			break;
@@ -1067,7 +1067,8 @@ guard_thread(void *arg)
 				guard_one(remote);
 			lastcheck = now;
 		}
-		signo = sigtimedwait(&mask, NULL, &timeout);
+		if (sigtimedwait(&mask, &info, &timeout) != 0)
+			break;
 	}
 	/* NOTREACHED */
 	return (NULL);
