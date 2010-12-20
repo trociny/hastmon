@@ -619,7 +619,7 @@ guard_thread(void *arg)
 	unsigned int ncomps;
 	struct timespec timeout;
 	sigset_t mask;
-	int signo;
+	siginfo_t info;
 
 	ncomps = res->hr_remote_cnt;
 
@@ -629,10 +629,10 @@ guard_thread(void *arg)
 	PJDLOG_VERIFY(sigaddset(&mask, SIGTERM) == 0);
 
 	timeout.tv_nsec = 0;
-	signo = -1;
+	info.si_signo = -1;
 
 	for (;;) {
-		switch (signo) {
+		switch (info.si_signo) {
 		case SIGHUP:
 			config_reload();
 			break;
@@ -647,7 +647,8 @@ guard_thread(void *arg)
 		}
 
 		timeout.tv_sec = RETRY_SLEEP;
-		signo = sigtimedwait(&mask, NULL, &timeout);
+		if (sigtimedwait(&mask, NULL, &timeout) != 0)
+			break;
 	}
 	/* NOTREACHED */
 	return (NULL);
