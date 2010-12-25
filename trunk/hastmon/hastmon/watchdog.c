@@ -210,6 +210,14 @@ watchdog_exitx(int exitcode, const char *fmt, ...)
 	exit(exitcode);
 }
 
+static __dead2 void
+watchdog_reload(void)
+{
+
+	pjdlog_info("Terminating due to reload.");
+	exit(EX_OK);
+}
+
 static void
 init_environment(struct hast_resource *res)
 {
@@ -605,13 +613,6 @@ heartbeat_end_thread(void *arg)
 	return (NULL);
 }
 
-
-static void
-config_reload(void)
-{
-
-}
-
 /*
  * Thread handles signals, etc.
  */
@@ -639,7 +640,7 @@ guard_thread(void *arg)
 	for (;;) {
 		switch (info.si_signo) {
 		case SIGHUP:
-			config_reload();
+			watchdog_reload();
 			break;
 		case SIGINT:
 		case SIGTERM:
