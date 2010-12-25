@@ -39,6 +39,13 @@
  * that are known to support the features properly (old versions of gcc-2
  * didn't permit keeping the keywords out of the application namespace).
  */
+#ifndef __GNUC_PREREQ__
+#ifdef __GNUC_PREREQ
+#define __GNUC_PREREQ__(maj, min)	__GNUC_PREREQ(maj, min)
+#else
+#define __GNUC_PREREQ__(maj, min) (0)
+#endif
+#endif
 #if !__GNUC_PREREQ__(2, 7) && !defined(__INTEL_COMPILER)
 #define	__printflike(fmtarg, firstvararg)
 #define	__scanflike(fmtarg, firstvararg)
