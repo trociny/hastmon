@@ -22,6 +22,7 @@ MAN=	hastmonctl.8
 
 BINDIR=${PREFIX}/sbin
 MANDIR=${PREFIX}/man
+CFLAGS+=-g -O0
 CFLAGS+=-I${.CURDIR}/../hastmon
 CFLAGS+=-DINET
 .if "${MK_INET6_SUPPORT}" != "no"
