@@ -652,8 +652,7 @@ guard_thread(void *arg)
 		}
 
 		timeout.tv_sec = RETRY_SLEEP;
-		if (sigtimedwait(&mask, NULL, &timeout) != 0)
-			break;
+		sigtimedwait(&mask, &info, &timeout);
 	}
 	/* NOTREACHED */
 	return (NULL);
