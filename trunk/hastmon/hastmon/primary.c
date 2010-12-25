@@ -1067,8 +1067,7 @@ guard_thread(void *arg)
 				guard_one(remote);
 			lastcheck = now;
 		}
-		if (sigtimedwait(&mask, &info, &timeout) != 0)
-			break;
+		sigtimedwait(&mask, &info, &timeout);
 	}
 	/* NOTREACHED */
 	return (NULL);
