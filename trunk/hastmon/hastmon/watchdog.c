@@ -345,17 +345,24 @@ hastmon_watchdog(struct hast_resource *res)
 		res->hr_workerpid = pid;
 		return;
 	}
+
+	gres = res;
+
 	(void)pidfile_close(pfh);
+	hook_fini();
 
 	setproctitle("%s (watchdog)", res->hr_name);
-
-	signal(SIGHUP, SIG_DFL);
-	signal(SIGCHLD, SIG_DFL);
 
 	/* Declare that we are sender. */
 	proto_send(res->hr_event, NULL, 0);
 	
 	init_environment(res);
+ 	/*
+	 * Create the guard thread first, so we can handle signals from the
+	 * very begining.
+	 */
+	error = pthread_create(&td, NULL, guard_thread, res);
+	assert(error == 0);
 	/*
 	 * Create the control thread before sending any event to the parent,
 	 * as we can deadlock when parent sends control request to worker,
@@ -366,15 +373,13 @@ hastmon_watchdog(struct hast_resource *res)
 	 */
 	error = pthread_create(&td, NULL, ctrl_thread, res);
 	assert(error == 0);
-	error = pthread_create(&td, NULL, heartbeat_start_thread, res);
-	assert(error == 0);
 	TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
 		error = pthread_create(&td, NULL, remote_send_thread, remote);
 		assert(error == 0);
 	}
 	error = pthread_create(&td, NULL, heartbeat_end_thread, res);
 	assert(error == 0);
-	(void)guard_thread(res);
+	(void)heartbeat_start_thread(res);
 }
 
 /*
