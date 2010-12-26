@@ -352,6 +352,23 @@ hook_free(struct hookproc *hp)
 	free(hp);
 }
 
+static void
+hook_inform_one(struct hookproc *hp, int status)
+{
+	if (WIFSIGNALED(status)) {
+		pjdlog_debug(1, "Hook was killed (pid=%u, signal=%d, cmd=[%s]).",
+		    hp->hp_pid, WTERMSIG(status), hp->hp_comm);
+	} else {
+		pjdlog_debug(1, "Hook exited (pid=%u, exitcode=%d, cmd=[%s]).",
+		    hp->hp_pid, WIFEXITED(status) ? WEXITSTATUS(status) : -1,
+		    hp->hp_comm);
+	}
+	if (hp->hp_caller != NULL)
+		control_send_event_status(hp->hp_caller->hc_res,
+		    hp->hp_caller->hc_event,
+		    WEXITSTATUS(status));	
+}
+
 void
 hook_check_one(pid_t pid, int status)
 {
@@ -366,18 +383,7 @@ hook_check_one(pid_t pid, int status)
 	}
 	hook_remove(hp);
 	mtx_unlock(&hookprocs_lock);
-	if (WIFSIGNALED(status)) {
-		pjdlog_debug(1, "Hook was killed (pid=%u, signal=%d, cmd=[%s]).",
-		    pid, WTERMSIG(status), hp->hp_comm);
-	} else {
-		pjdlog_debug(1, "Hook exited (pid=%u, exitcode=%d, cmd=[%s]).",
-		    pid, WIFEXITED(status) ? WEXITSTATUS(status) : -1,
-		    hp->hp_comm);
-	}
-	if (hp->hp_caller != NULL)
-		control_send_event_status(hp->hp_caller->hc_res,
-		    hp->hp_caller->hc_event,
-		    WEXITSTATUS(status));
+	hook_inform_one(hp, status);
 	hook_free(hp);
 }
 
@@ -404,11 +410,20 @@ hook_check(void)
 		 * If process doesn't exists we somehow missed it.
 		 * Not much can be done expect for logging this situation.
 		 */
-		if (kill(hp->hp_pid, 0) == -1 && errno == ESRCH) {
-			pjdlog_warning("Hook disappeared (pid=%u, cmd=[%s]).",
-			    hp->hp_pid, hp->hp_comm);
+		if (kill(hp->hp_pid, 0) == -1 && errno == ESRCH) {			
+			/*
+			 * On FreeBSD if a child exited but wait() was
+			 * not called, the above kill(pid, 0) would
+			 * return success. On NetBSD it would fail, so
+			 * here we check this.
+			 */
+			if(waitpid(hp->hp_pid, &status, WNOHANG) == hp->hp_pid)
+				hook_inform_one(hp, status);
+			else
+				pjdlog_warning("Hook disappeared (pid=%u, cmd=[%s]).",
+				    hp->hp_pid, hp->hp_comm);
 			hook_remove(hp);
-			hook_free(hp);
+			hook_free(hp);				
 			continue;
 		}
 
