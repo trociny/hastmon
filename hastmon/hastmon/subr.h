@@ -35,7 +35,6 @@
 #define	_SUBR_H_
 
 #include <sys/types.h>
-#include <stdbool.h>
 
 #include "hast.h"
 
@@ -53,7 +52,5 @@ const char *state2str(int state);
 int complaints_add(struct hast_resource *res);
 int complaints_cnt(struct hast_resource *res);
 void complaints_clear(struct hast_resource *res);
-
-int check_resource(struct hast_resource *res);
 
 #endif	/* !_SUBR_H_ */

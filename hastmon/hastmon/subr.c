@@ -31,17 +31,7 @@
 
 #include <sys/cdefs.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-
 #include <assert.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <paths.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 #include <pjdlog.h>
 
@@ -164,94 +154,5 @@ complaints_clear(struct hast_resource *res)
 	while ((cmpl = TAILQ_FIRST(&res->hr_complaints)) != NULL) {
 		TAILQ_REMOVE(&res->hr_complaints, cmpl, c_next);
 		free(cmpl);
-	}
-}
-
-static void
-descriptors(long maxfd)
-{
-	int fd;
-
-	/*
-	 * Close all descriptors.
-	 */	
-	for (fd = 0; fd <= maxfd; fd++) {
-		switch (fd) {
-		case STDIN_FILENO:
-		case STDOUT_FILENO:
-		case STDERR_FILENO:
-			if (pjdlog_mode_get() == PJDLOG_MODE_STD)
-				break;
-			/* FALLTHROUGH */
-		default:
-			close(fd);
-			break;
-		}
-	}
-	if (pjdlog_mode_get() == PJDLOG_MODE_STD)
-		return;
-	/*
-	 * Redirect stdin, stdout and stderr to /dev/null.
-	 */
-	fd = open(_PATH_DEVNULL, O_RDONLY);
-	if (fd >= 0 && fd != STDIN_FILENO) {
-		dup2(fd, STDIN_FILENO);
-		close(fd);
-	}
-	fd = open(_PATH_DEVNULL, O_WRONLY);
-	if (fd >= 0 ) {
-		if (fd != STDOUT_FILENO)
-			dup2(fd, STDOUT_FILENO);
-		if (fd != STDERR_FILENO)
-			dup2(fd, STDERR_FILENO);
-		if (fd != STDOUT_FILENO && fd != STDERR_FILENO)
-			close(fd);
-	}
-}
-
-int
-check_resource(struct hast_resource *res)
-{
-	int status;
-	long maxfd;
-	pid_t pid;
-	char *args[3];
-
-	assert(res->hr_exec != NULL && res->hr_exec[0] != '\0');
-
-	args[0] = res->hr_exec;
-	args[1] = "status";
-	args[2] = NULL;
-
-	/*
-	 * Find descriptor table size to pass it to descriptors(). We
-	 * can't do this in descriptors() because it is called after
-	 * fork() in in a multithreaded process and should not call
-	 * any not async-signal safe functions.
-	 */
-	maxfd = sysconf(_SC_OPEN_MAX);
-	if (maxfd < 0) {
-		pjdlog_errno(LOG_WARNING, "sysconf(_SC_OPEN_MAX) failed");
-		maxfd = 1024;
-	}
-	
-	pid = fork();
-	switch (pid) {
-	case -1:	/* Error. */
-		pjdlog_errno(LOG_ERR, "Unable to fork to execute %s", res->hr_exec);
-		return (-1);
-	case 0:		/* Child. */
-		descriptors(maxfd);
-		execv(res->hr_exec, args);
-		exit(EX_SOFTWARE);
-	default:	/* Parent. */
-		if (waitpid(pid, &status, 0) != pid) {
-			pjdlog_errno(LOG_ERR,
-				     "Waiting for process (pid=%u) failed",
-				     (unsigned int)pid);
-			return (-1);
-		} else {
-			return (WEXITSTATUS(status));
-		}
 	}
 }
