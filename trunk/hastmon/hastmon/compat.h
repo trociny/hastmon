@@ -74,4 +74,15 @@
 #endif
 #endif /* !__dead2 */
 
+#ifndef roundup2
+#define roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
+#endif
+
+#ifndef le16toh
+#define le16toh(x)	ntohs((x))
+#define le32toh(x)	ntohl((x))
+#define htole16(x)	htons((x))
+#define htole32(x)	htonl((x))
+#endif
+
 #endif /* !_COMPAT_H_ */
