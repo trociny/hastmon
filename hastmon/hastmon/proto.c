@@ -31,7 +31,11 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+#ifdef HAVE_DEFINE_TAILQ_FOREACH_SAFE_SYS_QUEUE_H
 #include <sys/queue.h>
+#else
+#include "queue.h"
+#endif
 #include <sys/socket.h>
 
 #include <assert.h>
