@@ -62,11 +62,14 @@
 #ifndef __dead2
 #ifdef lint
 #define	__dead2
+#define __unused
 #else
 #if !__GNUC_PREREQ__(2, 5) && !defined(__INTEL_COMPILER)
 #define	__dead2
+#define __unused
 #else
 #define	__dead2		__attribute__((__noreturn__))
+#define __unused	__attribute__((__unused__))
 #endif
 #endif
 #endif /* !__dead2 */
