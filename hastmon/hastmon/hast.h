@@ -33,7 +33,11 @@
 #ifndef	_HAST_H_
 #define	_HAST_H_
 
+#ifdef HAVE_DEFINE_TAILQ_FOREACH_SAFE_SYS_QUEUE_H
 #include <sys/queue.h>
+#else
+#include "queue.h"
+#endif
 #include <sys/socket.h>
 
 #include <arpa/inet.h>

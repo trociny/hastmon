@@ -32,7 +32,11 @@
 #ifndef	_PROTO_IMPL_H_
 #define	_PROTO_IMPL_H_
 
+#ifdef HAVE_DEFINE_TAILQ_FOREACH_SAFE_SYS_QUEUE_H
 #include <sys/queue.h>
+#else
+#include "queue.h"
+#endif
 
 #include <stdbool.h>	/* bool */
 #include <stdlib.h>	/* size_t */
