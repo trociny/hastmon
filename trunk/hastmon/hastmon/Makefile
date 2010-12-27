@@ -1,5 +1,7 @@
 PREFIX?=	/usr/local
 
+MKC_COMMON_DEFINES.Linux=	-D_NO_SO_LEN
+
 MKC_CHECK_HEADERS+=	pthread_np.h
 MKC_CHECK_FUNCS1+=	pthread_mutex_isowned_np:pthread_np.h
 
