@@ -32,6 +32,8 @@
 #ifndef	_CONTROL_H_
 #define	_CONTROL_H_
 
+#include <stdint.h>
+
 #define	HASTCTL_SET_ROLE	1
 #define	HASTCTL_STATUS		2
 #define	HASTCTL_EVENT_STATUS	3
