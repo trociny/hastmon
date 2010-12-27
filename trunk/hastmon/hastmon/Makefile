@@ -10,6 +10,8 @@ MKC_CHECK_FUNCS2+=	pthread_condattr_setclock:pthread.h
 MKC_CHECK_HEADERS+=	machine/vmparam.h sys/user.h
 MKC_CHECK_HEADERS+=	sys/endian.h
 
+MKC_CHECK_DEFINES+=	TAILQ_FOREACH_SAFE:sys/queue.h
+
 PROG=	hastmon
 SRCS+=	control.c
 SRCS+=	ebuf.c event.c
