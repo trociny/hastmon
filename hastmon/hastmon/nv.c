@@ -30,10 +30,11 @@
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
+#ifdef HAVE_HEADER_SYS_ENDIAN_H
 #include <sys/endian.h>
+#endif
 
 #include <assert.h>
-#include <bitstring.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
