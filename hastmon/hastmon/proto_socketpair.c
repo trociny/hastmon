@@ -40,6 +40,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "compat.h"
 #include "hast.h"
 #include "proto_impl.h"
 
