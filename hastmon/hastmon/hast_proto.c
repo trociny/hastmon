@@ -44,6 +44,7 @@
 #include <pjdlog.h>
 #include <proto.h>
 
+#include "compat.h"
 #include "hast_proto.h"
 
 #ifndef ERPCMISMATCH
