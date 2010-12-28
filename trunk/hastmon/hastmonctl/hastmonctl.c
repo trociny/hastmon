@@ -69,6 +69,15 @@ enum {
 	CMD_STATUS,
 };
 
+#ifndef HAVE_FUNC0_GETPROGNAME_STDLIB_H
+static const char *
+getprogname()
+{
+	return "hastmonctl";
+}
+#endif
+
+
 static __dead2 void
 usage(void)
 {
