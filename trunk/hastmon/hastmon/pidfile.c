@@ -177,11 +177,10 @@ pidfile_open(const char *path, mode_t mode, pid_t *pidptr)
 		return (NULL);
 
 	if (path == NULL)
-		len = snprintf(pfh->pf_path, sizeof(pfh->pf_path),
-		    "/var/run/%s.pid", getprogname());
-	else
-		len = snprintf(pfh->pf_path, sizeof(pfh->pf_path),
-		    "%s", path);
+		return (NULL);
+	
+	len = snprintf(pfh->pf_path, sizeof(pfh->pf_path),
+	    "%s", path);
 	if (len >= (int)sizeof(pfh->pf_path)) {
 		free(pfh);
 		errno = ENAMETOOLONG;
