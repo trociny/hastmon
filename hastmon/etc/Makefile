@@ -1,5 +1,3 @@
-# $FreeBSD$
-
 SUBDIR=	rc.d
 
 .include <mkc.own.mk>
