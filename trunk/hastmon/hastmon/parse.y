@@ -77,7 +77,9 @@ isitme(const char *name)
 {
 	char buf[MAXHOSTNAMELEN];
 	char *pos;
+#ifdef _KERN_HOSTUUID
 	size_t bufsize;
+#endif
 
 	/*
 	 * First check if the give name matches our full hostname.
@@ -96,6 +98,7 @@ isitme(const char *name)
 	if (pos != NULL && pos != buf && strncmp(buf, name, pos - buf) == 0)
 		return (1);
 
+#ifdef _KERN_HOSTUUID
 	/*
 	 * At the end check if name is equal to our host's UUID.
 	 */
@@ -103,7 +106,8 @@ isitme(const char *name)
 	if ((sysctlbyname("kern.hostuuid", buf, &bufsize, NULL, 0) == 0) &&
 	    (strcasecmp(buf, name) == 0))
 		return (1);
-	
+#endif
+
 	/*
 	 * Looks like this isn't about us.
 	 */
