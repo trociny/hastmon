@@ -20,6 +20,8 @@ MKC_SOURCE_FUNCLIBS=	strlcat strlcpy
 
 MKC_CHECK_FUNCS1=	setproctitle:unistd.h setproctitle:setproctitle.h
 
+MKC_CHECK_FUNCS1=	closefrom:unistd.h
+
 PROG=	hastmon
 SRCS+=	control.c
 SRCS+=	ebuf.c event.c

@@ -118,6 +118,26 @@ hook_caller_free(struct hook_caller *caller)
 	}
 }
 
+#ifndef HAVE_FUNC1_CLOSEFROM_UNISTD_H
+static void
+closefrom(int from)
+{
+	long fd, maxfd;
+
+	maxfd = sysconf(_SC_OPEN_MAX);
+	if (maxfd < 0) {
+		pjdlog_errno(LOG_WARNING, "sysconf(_SC_OPEN_MAX) failed");
+		maxfd = 1024;
+	}
+	for (fd = from; fd <= maxfd; fd++)
+		close(fd);
+}
+#endif
+
+#ifndef MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
 static void
 descriptors(void)
 {
