@@ -28,6 +28,10 @@
 #ifndef _COMPAT_H_
 #define _COMPAT_H_
 
+#include <sys/cdefs.h>
+
+#include <sys/types.h>
+
 #ifndef __printflike
 /*
  * Taken from FreeBSD's sys/cdefs.h
@@ -83,6 +87,14 @@
 #define le32toh(x)	ntohl((x))
 #define htole16(x)	htons((x))
 #define htole32(x)	htonl((x))
+#endif
+
+#ifndef HAVE_FUNC3_STRLCAT_STRING_H
+size_t strlcat(char *dst, const char *src, size_t size);
+#endif
+
+#ifndef HAVE_FUNC3_STRLCPY_STRING_H
+size_t strlcpy(char *dst, const char *src, size_t size);
 #endif
 
 #endif /* !_COMPAT_H_ */
