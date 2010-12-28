@@ -359,7 +359,9 @@ hastmon_watchdog(struct hast_resource *res)
 	(void)pidfile_close(pfh);
 	hook_fini();
 
+#if defined(HAVE_FUNC1_SETPROCTITLE_UNISTD_H) || defined(HAVE_FUNC1_SETPROCTITLE_SETPROCTITLE_H)
 	setproctitle("%s (watchdog)", res->hr_name);
+#endif
 
 	/* Declare that we are sender. */
 	proto_send(res->hr_event, NULL, 0);
