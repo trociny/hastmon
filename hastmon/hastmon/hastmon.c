@@ -471,6 +471,10 @@ terminate_worker(struct hast_resource *res, int sig)
 	child_cleanup(res);
 }
 
+#ifndef HAVE_FUNC2_ARC4RANDOM_STDLIB_H
+#define arc4random()	random()
+#endif
+
 #ifndef HAVE_FUNC2_ARC4RANDOM_BUF_STDLIB_H
 static void
 arc4random_buf(void *buf, size_t n)

@@ -12,6 +12,9 @@ MKC_CHECK_HEADERS+=	sys/endian.h
 
 MKC_CHECK_DEFINES+=	TAILQ_FOREACH_SAFE:sys/queue.h
 
+MKC_CHECK_FUNCS3=	strlcat:string.h strlcpy:string.h
+MKC_SOURCE_FUNCLIBS=	strlcat strlcpy
+
 PROG=	hastmonctl
 SRCS+=	ebuf.c
 SRCS+=	hast_proto.c hastmonctl.c
