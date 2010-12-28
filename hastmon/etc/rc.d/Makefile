@@ -1,6 +1,8 @@
 PREFIX?=	/usr/local
 
-.if OPSYS == "FreeBSD"
+SYSTEM!=        uname -s
+
+.if "${SYSTEM}" == "FreeBSD"
 FILES=	hastmon
 
 FILESDIR=	${PREFIX}/etc/rc.d
