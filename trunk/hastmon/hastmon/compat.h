@@ -83,10 +83,14 @@
 #endif
 
 #ifndef le16toh
-#define le16toh(x)	ntohs((x))
-#define le32toh(x)	ntohl((x))
-#define htole16(x)	htons((x))
-#define htole32(x)	htonl((x))
+/* XXX: LITTLE_ENDIAN */
+#define	htole16(x)	((uint16_t)(x))
+#define	htole32(x)	((uint32_t)(x))
+#define	htole64(x)	((uint64_t)(x))
+
+#define	le16toh(x)	((uint16_t)(x))
+#define	le32toh(x)	((uint32_t)(x))
+#define	le64toh(x)	((uint64_t)(x))
 #endif
 
 #ifndef HAVE_FUNC3_STRLCAT_STRING_H

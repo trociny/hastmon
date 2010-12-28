@@ -644,7 +644,6 @@ nv_dump(struct nv *nv)
 			    (uintmax_t)le32toh(*(uint32_t *)(void *)data) :
 			    (uintmax_t)*(uint32_t *)(void *)data);
 			break;
-#ifdef le64toh
 		case NV_TYPE_INT64:
 			printf("(int64): %jd", swap ?
 			    (intmax_t)le64toh(*(int64_t *)(void *)data) :
@@ -655,7 +654,6 @@ nv_dump(struct nv *nv)
 			    (uintmax_t)le64toh(*(uint64_t *)(void *)data) :
 			    (uintmax_t)*(uint64_t *)(void *)data);
 			break;
-#endif
 		case NV_TYPE_INT8_ARRAY:
 			printf("(int8 array):");
 			for (ii = 0; ii < dsize; ii++)
@@ -698,7 +696,6 @@ nv_dump(struct nv *nv)
 				    (uintmax_t)((uint32_t *)(void *)data)[ii]);
 			}
 			break;
-#ifdef le64toh
 		case NV_TYPE_INT64_ARRAY:
 			printf("(int64 array):");
 			for (ii = 0; ii < dsize / 8; ii++) {
@@ -715,7 +712,6 @@ nv_dump(struct nv *nv)
 				    (uintmax_t)((uint64_t *)(void *)data)[ii]);
 			}
 			break;
-#endif
 		case NV_TYPE_STRING:
 			printf("(string): %s", (char *)data);
 			break;
@@ -908,12 +904,10 @@ nv_swap(struct nvhdr *nvh, bool tohost)
 					*(uint32_t *)(void *)p =
 					    le32toh(*(uint32_t *)(void *)p);
 					break;
-#ifdef le64toh
 				case 8:
 					*(uint64_t *)(void *)p =
 					    le64toh(*(uint64_t *)(void *)p);
 					break;
-#endif
 				default:
 					assert(!"invalid condition");
 				}
@@ -927,12 +921,10 @@ nv_swap(struct nvhdr *nvh, bool tohost)
 					*(uint32_t *)(void *)p =
 					    htole32(*(uint32_t *)(void *)p);
 					break;
-#ifdef htole64
 				case 8:
 					*(uint64_t *)(void *)p =
 					    htole64(*(uint64_t *)(void *)p);
 					break;
-#endif
 				default:
 					assert(!"invalid condition");
 				}
