@@ -2,7 +2,7 @@
 
 PREFIX?=	/usr/local
 
-MKC_COMMON_DEFINES.Linux=	-D_NO_SO_LEN
+MKC_COMMON_DEFINES.Linux+=	-D_NO_SO_LEN
 
 MKC_CHECK_HEADERS+=	pthread_np.h
 MKC_CHECK_FUNCS1+=	pthread_mutex_isowned_np:pthread_np.h
@@ -12,8 +12,8 @@ MKC_CHECK_HEADERS+=	sys/endian.h
 
 MKC_CHECK_DEFINES+=	TAILQ_FOREACH_SAFE:sys/queue.h
 
-MKC_CHECK_FUNCS3=	strlcat:string.h strlcpy:string.h
-MKC_SOURCE_FUNCLIBS=	strlcat strlcpy
+MKC_CHECK_FUNCS3+=	strlcat:string.h strlcpy:string.h
+MKC_SOURCE_FUNCLIBS+=	strlcat strlcpy
 
 MKC_CHECK_FUNCS0+=	getprogname:stdlib.h
 
