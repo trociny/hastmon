@@ -78,6 +78,18 @@
 #endif
 #endif /* !__dead2 */
 
+#ifndef __packed
+#ifdef lint
+#define	__packed
+#else
+#if !__GNUC_PREREQ__(2, 7) && !defined(__INTEL_COMPILER)
+#define	__packed
+#else
+#define __packed	__attribute__((__packed__))
+#endif
+#endif
+#endif /* !__packed */
+
 #ifndef roundup2
 #define roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
 #endif
