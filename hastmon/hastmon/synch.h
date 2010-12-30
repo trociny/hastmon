@@ -42,7 +42,7 @@
 #include <time.h>
 
 static __inline void
-mtx_init(pthread_mutex_t *lock)
+synch_mtx_init(pthread_mutex_t *lock)
 {
 	int error;
 
@@ -50,7 +50,7 @@ mtx_init(pthread_mutex_t *lock)
 	assert(error == 0);
 }
 static __inline void
-mtx_destroy(pthread_mutex_t *lock)
+synch_mtx_destroy(pthread_mutex_t *lock)
 {
 	int error;
 
@@ -58,7 +58,7 @@ mtx_destroy(pthread_mutex_t *lock)
 	assert(error == 0);
 }
 static __inline void
-mtx_lock(pthread_mutex_t *lock)
+synch_mtx_lock(pthread_mutex_t *lock)
 {
 	int error;
 
@@ -66,7 +66,7 @@ mtx_lock(pthread_mutex_t *lock)
 	assert(error == 0);
 }
 static __inline bool
-mtx_trylock(pthread_mutex_t *lock)
+synch_mtx_trylock(pthread_mutex_t *lock)
 {
 	int error;
 
@@ -75,7 +75,7 @@ mtx_trylock(pthread_mutex_t *lock)
 	return (error == 0);
 }
 static __inline void
-mtx_unlock(pthread_mutex_t *lock)
+synch_mtx_unlock(pthread_mutex_t *lock)
 {
 	int error;
 
@@ -85,7 +85,7 @@ mtx_unlock(pthread_mutex_t *lock)
 #ifdef HAVE_FUNC1_PTHREAD_MUTEX_ISOWNED_NP_PTHREAD_NP_H
 #define HAVE_MTX_OWNED
 static __inline bool
-mtx_owned(pthread_mutex_t *lock)
+synch_mtx_owned(pthread_mutex_t *lock)
 {
 
 	return (pthread_mutex_isowned_np(lock) != 0);
@@ -93,7 +93,7 @@ mtx_owned(pthread_mutex_t *lock)
 #endif
 
 static __inline void
-rw_init(pthread_rwlock_t *lock)
+synch_rw_init(pthread_rwlock_t *lock)
 {
 	int error;
 
@@ -101,7 +101,7 @@ rw_init(pthread_rwlock_t *lock)
 	assert(error == 0);
 }
 static __inline void
-rw_destroy(pthread_rwlock_t *lock)
+synch_rw_destroy(pthread_rwlock_t *lock)
 {
 	int error;
 
@@ -109,7 +109,7 @@ rw_destroy(pthread_rwlock_t *lock)
 	assert(error == 0);
 }
 static __inline void
-rw_rlock(pthread_rwlock_t *lock)
+synch_rw_rlock(pthread_rwlock_t *lock)
 {
 	int error;
 
@@ -117,7 +117,7 @@ rw_rlock(pthread_rwlock_t *lock)
 	assert(error == 0);
 }
 static __inline void
-rw_wlock(pthread_rwlock_t *lock)
+synch_rw_wlock(pthread_rwlock_t *lock)
 {
 	int error;
 
@@ -125,7 +125,7 @@ rw_wlock(pthread_rwlock_t *lock)
 	assert(error == 0);
 }
 static __inline void
-rw_unlock(pthread_rwlock_t *lock)
+synch_rw_unlock(pthread_rwlock_t *lock)
 {
 	int error;
 
@@ -134,7 +134,7 @@ rw_unlock(pthread_rwlock_t *lock)
 }
 
 static __inline void
-cv_init(pthread_cond_t *cv)
+synch_cv_init(pthread_cond_t *cv)
 {
 	int error;
 #ifdef HAVE_FUNC2_PTHREAD_CONDATTR_SETCLOCK_PTHREAD_H
@@ -154,7 +154,7 @@ cv_init(pthread_cond_t *cv)
 #endif
 }
 static __inline void
-cv_wait(pthread_cond_t *cv, pthread_mutex_t *lock)
+synch_cv_wait(pthread_cond_t *cv, pthread_mutex_t *lock)
 {
 	int error;
 
@@ -162,7 +162,7 @@ cv_wait(pthread_cond_t *cv, pthread_mutex_t *lock)
 	assert(error == 0);
 }
 static __inline bool
-cv_timedwait(pthread_cond_t *cv, pthread_mutex_t *lock, int timeout)
+synch_cv_timedwait(pthread_cond_t *cv, pthread_mutex_t *lock, int timeout)
 {
 	struct timespec ts;
 	int error;
@@ -180,7 +180,7 @@ cv_timedwait(pthread_cond_t *cv, pthread_mutex_t *lock, int timeout)
 	return (error == ETIMEDOUT);
 }
 static __inline void
-cv_signal(pthread_cond_t *cv)
+synch_cv_signal(pthread_cond_t *cv)
 {
 	int error;
 
@@ -188,7 +188,7 @@ cv_signal(pthread_cond_t *cv)
 	assert(error == 0);
 }
 static __inline void
-cv_broadcast(pthread_cond_t *cv)
+synch_cv_broadcast(pthread_cond_t *cv)
 {
 	int error;
 

@@ -194,7 +194,7 @@ hook_find(pid_t pid)
 	struct hookproc *hp;
 
 #ifdef HAVE_MTX_OWNED	
-	assert(mtx_owned(&hookprocs_lock));
+	assert(synch_mtx_owned(&hookprocs_lock));
 #endif
 
 	TAILQ_FOREACH(hp, &hookprocs, hp_next) {
@@ -214,7 +214,7 @@ hook_findbycaller(struct hook_caller *caller)
 	struct hookproc *hp;
 
 #ifdef HAVE_MTX_OWNED
-	assert(mtx_owned(&hookprocs_lock));
+	assert(synch_mtx_owned(&hookprocs_lock));
 #endif
 	
 	if (caller == NULL)
@@ -243,7 +243,7 @@ hook_invalidate_callers(struct hast_resource *res)
 	
 	struct hookproc *hp;
 
-	mtx_lock(&hookprocs_lock);
+	synch_mtx_lock(&hookprocs_lock);
 	
 	TAILQ_FOREACH(hp, &hookprocs, hp_next) {
 		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
@@ -257,7 +257,7 @@ hook_invalidate_callers(struct hast_resource *res)
 		}
 	}
 
-	mtx_unlock(&hookprocs_lock);
+	synch_mtx_unlock(&hookprocs_lock);
 }
 
 void
@@ -266,7 +266,7 @@ hook_init(void)
 
 	assert(!hooks_initialized);
 
-	mtx_init(&hookprocs_lock);
+	synch_mtx_init(&hookprocs_lock);
 	TAILQ_INIT(&hookprocs);
 	hooks_initialized = true;
 }
@@ -278,7 +278,7 @@ hook_fini(void)
 
 	assert(hooks_initialized);
 
-	mtx_lock(&hookprocs_lock);
+	synch_mtx_lock(&hookprocs_lock);
 	while ((hp = TAILQ_FIRST(&hookprocs)) != NULL) {
 		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
 		assert(hp->hp_pid > 0);
@@ -286,9 +286,9 @@ hook_fini(void)
 		hook_remove(hp);
 		hook_free(hp);
 	}
-	mtx_unlock(&hookprocs_lock);
+	synch_mtx_unlock(&hookprocs_lock);
 
-	mtx_destroy(&hookprocs_lock);
+	synch_mtx_destroy(&hookprocs_lock);
 	TAILQ_INIT(&hookprocs);
 	hooks_initialized = false;
 }
@@ -342,10 +342,10 @@ hook_add(struct hookproc *hp, pid_t pid)
 	assert(hp->hp_pid == 0);
 
 	hp->hp_pid = pid;
-	mtx_lock(&hookprocs_lock);
+	synch_mtx_lock(&hookprocs_lock);
 	hp->hp_magic = HOOKPROC_MAGIC_ONLIST;
 	TAILQ_INSERT_TAIL(&hookprocs, hp, hp_next);
-	mtx_unlock(&hookprocs_lock);
+	synch_mtx_unlock(&hookprocs_lock);
 }
 
 static void
@@ -355,7 +355,7 @@ hook_remove(struct hookproc *hp)
 	assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
 	assert(hp->hp_pid > 0);
 #ifdef HAVE_MTX_OWNED
-	assert(mtx_owned(&hookprocs_lock));
+	assert(synch_mtx_owned(&hookprocs_lock));
 #endif
 
 	TAILQ_REMOVE(&hookprocs, hp, hp_next);
@@ -396,15 +396,15 @@ hook_check_one(pid_t pid, int status)
 {
 	struct hookproc *hp;
 
-	mtx_lock(&hookprocs_lock);
+	synch_mtx_lock(&hookprocs_lock);
 	hp = hook_find(pid);
 	if (hp == NULL) {
-		mtx_unlock(&hookprocs_lock);
+		synch_mtx_unlock(&hookprocs_lock);
 		pjdlog_debug(1, "Unknown process pid=%u", pid);
 		return;
 	}
 	hook_remove(hp);
-	mtx_unlock(&hookprocs_lock);
+	synch_mtx_unlock(&hookprocs_lock);
 	hook_inform_one(hp, status);
 	hook_free(hp);
 }
@@ -423,7 +423,7 @@ hook_check(void)
 	 * Report about processes that are running for a long time.
 	 */
 	now = time(NULL);
-	mtx_lock(&hookprocs_lock);
+	synch_mtx_lock(&hookprocs_lock);
 	TAILQ_FOREACH_SAFE(hp, &hookprocs, hp_next, hp2) {
 		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
 		assert(hp->hp_pid > 0);
@@ -463,7 +463,7 @@ hook_check(void)
 		    hp->hp_comm);
 		hp->hp_lastreport = now;
 	}
-	mtx_unlock(&hookprocs_lock);
+	synch_mtx_unlock(&hookprocs_lock);
 }
 
 void
@@ -501,18 +501,18 @@ hook_execv(struct hook_caller *caller, const char *path, va_list ap)
 
 	if (caller != NULL) {
 		hook_check();
-		mtx_lock(&hookprocs_lock);
+		synch_mtx_lock(&hookprocs_lock);
 		hp = hook_findbycaller(caller);
 		if (hp != NULL) {
 			pjdlog_error("Earlier started hook is still running (pid=%u, cmd=[%s]). Will not start new one.",
 			    hp->hp_pid, hp->hp_comm);		
-			mtx_unlock(&hookprocs_lock);
+			synch_mtx_unlock(&hookprocs_lock);
 			control_send_event_status(caller->hc_res, caller->hc_event,
 			    HAST_STATE_UNKNOWN);
 			hook_caller_free(caller);
 			return;
 		}
-		mtx_unlock(&hookprocs_lock);
+		synch_mtx_unlock(&hookprocs_lock);
 	}
 	hp = hook_alloc(path, args, caller);
 	if (hp == NULL)

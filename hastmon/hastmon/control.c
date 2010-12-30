@@ -531,7 +531,7 @@ ctrl_thread(void *arg)
 		case HASTCTL_STATUS:
 			pjdlog_debug(2, "ctrl_thread: Control message cmd: status.");
 			nvout = nv_alloc();
-			mtx_lock(&res->hr_lock);
+			synch_mtx_lock(&res->hr_lock);
 			TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 				switch (res->hr_role) {
 				case HAST_ROLE_PRIMARY:
@@ -556,7 +556,7 @@ ctrl_thread(void *arg)
 				}
 			nv_add_uint8(nvout, res->hr_local_state, "state");
 			nv_add_uint8(nvout, res->hr_local_attempts, "attempts");
-			mtx_unlock(&res->hr_lock);
+			synch_mtx_unlock(&res->hr_lock);
 			if (nv_error(nvout) != 0) {
 				pjdlog_error("Unable to create answer on control message.");
 				goto nv_free;
@@ -574,7 +574,7 @@ ctrl_thread(void *arg)
 			case EVENT_STATUS:				
 				pjdlog_debug(2,"ctrl_thread: status event received with status %u.",
 				    (unsigned int)status);
-				mtx_lock(&res->hr_lock);
+				synch_mtx_lock(&res->hr_lock);
 				switch (status) {
 				case 0:
 					res->hr_local_state = HAST_STATE_RUN;
@@ -586,7 +586,7 @@ ctrl_thread(void *arg)
 					res->hr_local_state = HAST_STATE_UNKNOWN;
 					break;
 				}
-				mtx_unlock(&res->hr_lock);
+				synch_mtx_unlock(&res->hr_lock);
 			default:
 				break;
 			}

@@ -253,7 +253,7 @@ respond_thread(void *arg)
 		       "respond: Got request header: ");
 		switch (cmd) {
 		case HIO_STATE:
-			mtx_lock(&res->hr_lock);
+			synch_mtx_lock(&res->hr_lock);
 			remote->r_state = nv_get_uint8(nvin, "state");
 			pjdlog_debug(2, "respond: Setting remote state to %s (%u).",
 			    state2str(remote->r_state),
@@ -262,7 +262,7 @@ respond_thread(void *arg)
 			    state2str(res->hr_local_state),
 			    (unsigned int)res->hr_local_state);
 			nv_add_uint8(nvout, res->hr_local_state, "state");
-			mtx_unlock(&res->hr_lock);
+			synch_mtx_unlock(&res->hr_lock);
 			break;
 		default:
 			pjdlog_error("Header contains invalid 'cmd' (%hhu).",
@@ -297,19 +297,19 @@ local_check_thread(void *arg)
 		event_send(res, EVENT_STATUS);
 		pjdlog_debug(2, "local_check: Sleeping for %d sec.", res->hr_heartbeat_interval);
 		sleep(res->hr_heartbeat_interval);
-		mtx_lock(&res->hr_lock);
+		synch_mtx_lock(&res->hr_lock);
 		pjdlog_debug(2, "local_check: Local state is %s (%u).",
 		    state2str(res->hr_local_state),
 		    (unsigned int)res->hr_local_state);
 		if (res->hr_local_state != HAST_STATE_STOPPED) {
 			res->hr_local_state = HAST_STATE_STOPPING;
-			mtx_unlock(&res->hr_lock);
+			synch_mtx_unlock(&res->hr_lock);
 			pjdlog_debug(2, "local_check: Stopping resource.");
 			event_send(res, EVENT_STOP);
 			pjdlog_debug(2, "local_check: Sleeping for %d sec.", res->hr_heartbeat_interval);
 			sleep(res->hr_heartbeat_interval);			
 		} else
-			mtx_unlock(&res->hr_lock);
+			synch_mtx_unlock(&res->hr_lock);
 	}
 	/* NOTREACHED */
 	return (NULL);

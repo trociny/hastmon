@@ -37,7 +37,7 @@ static __inline void
 refcount_init(volatile u_int *count, u_int value)
 {
 
-	mtx_init(&_refcount_lock);
+	synch_mtx_init(&_refcount_lock);
 	*count = value;
 }
 
@@ -45,18 +45,18 @@ static __inline void
 refcount_acquire(volatile u_int *count)
 {
 
-	mtx_lock(&_refcount_lock);
+	synch_mtx_lock(&_refcount_lock);
 	(*count)++;
-	mtx_unlock(&_refcount_lock);
+	synch_mtx_unlock(&_refcount_lock);
 }
 
 static __inline int
 refcount_release(volatile u_int *count)
 {
 
-	mtx_lock(&_refcount_lock);
+	synch_mtx_lock(&_refcount_lock);
 	(*count)--;
-	mtx_unlock(&_refcount_lock);
+	synch_mtx_unlock(&_refcount_lock);
 	return (*count == 0);
 }
 

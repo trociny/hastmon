@@ -134,42 +134,42 @@ static pthread_cond_t hio_guard_cond;
 #define	QUEUE_INSERT1(hio, name, ncomp)	do {				\
 	bool _wakeup;							\
 									\
-	mtx_lock(&hio_##name##_list_lock[(ncomp)]);			\
+	synch_mtx_lock(&hio_##name##_list_lock[(ncomp)]);		\
 	_wakeup = TAILQ_EMPTY(&hio_##name##_list[(ncomp)]);		\
 	TAILQ_INSERT_TAIL(&hio_##name##_list[(ncomp)], (hio),		\
 	    hio_next[(ncomp)]);						\
-	mtx_unlock(&hio_##name##_list_lock[ncomp]);			\
+	synch_mtx_unlock(&hio_##name##_list_lock[ncomp]);		\
 	if (_wakeup)							\
-		cv_signal(&hio_##name##_list_cond[(ncomp)]);		\
+		synch_cv_signal(&hio_##name##_list_cond[(ncomp)]);	\
 } while (0)
 #define	QUEUE_INSERT2(hio, name)	do {				\
 	bool _wakeup;							\
 									\
-	mtx_lock(&hio_##name##_list_lock);				\
+	synch_mtx_lock(&hio_##name##_list_lock);			\
 	_wakeup = TAILQ_EMPTY(&hio_##name##_list);			\
 	TAILQ_INSERT_TAIL(&hio_##name##_list, (hio), hio_##name##_next);\
-	mtx_unlock(&hio_##name##_list_lock);				\
+	synch_mtx_unlock(&hio_##name##_list_lock);			\
 	if (_wakeup)							\
-		cv_signal(&hio_##name##_list_cond);			\
+		synch_cv_signal(&hio_##name##_list_cond);		\
 } while (0)
 #define	QUEUE_TAKE1(hio, name, ncomp)	do {				\
-	mtx_lock(&hio_##name##_list_lock[(ncomp)]);			\
+	synch_mtx_lock(&hio_##name##_list_lock[(ncomp)]);		\
 	while (((hio) = TAILQ_FIRST(&hio_##name##_list[(ncomp)])) == NULL) { \
-		cv_wait(&hio_##name##_list_cond[(ncomp)],		\
+		synch_cv_wait(&hio_##name##_list_cond[(ncomp)],		\
 		    &hio_##name##_list_lock[(ncomp)]);			\
 	}								\
 	TAILQ_REMOVE(&hio_##name##_list[(ncomp)], (hio),		\
 	    hio_next[(ncomp)]);						\
-	mtx_unlock(&hio_##name##_list_lock[(ncomp)]);			\
+	synch_mtx_unlock(&hio_##name##_list_lock[(ncomp)]);		\
 } while (0)
 #define	QUEUE_TAKE2(hio, name)	do {					\
-	mtx_lock(&hio_##name##_list_lock);				\
+	synch_mtx_lock(&hio_##name##_list_lock);			\
 	while (((hio) = TAILQ_FIRST(&hio_##name##_list)) == NULL) {	\
-		cv_wait(&hio_##name##_list_cond,			\
+		synch_cv_wait(&hio_##name##_list_cond,			\
 		    &hio_##name##_list_lock);				\
 	}								\
 	TAILQ_REMOVE(&hio_##name##_list, (hio), hio_##name##_next);	\
-	mtx_unlock(&hio_##name##_list_lock);				\
+	synch_mtx_unlock(&hio_##name##_list_lock);			\
 } while (0)
 
 static struct hast_resource *gres;
@@ -257,18 +257,18 @@ init_environment(struct hast_resource *res)
 	 * Initialize lists, their locks and theirs condition variables.
 	 */
 	TAILQ_INIT(&hio_free_list);
-	mtx_init(&hio_free_list_lock);
-	cv_init(&hio_free_list_cond);
+	synch_mtx_init(&hio_free_list_lock);
+	synch_cv_init(&hio_free_list_cond);
 	for (ii = 0; ii < ncomps; ii++) {
 		TAILQ_INIT(&hio_send_list[ii]);
-		mtx_init(&hio_send_list_lock[ii]);
-		cv_init(&hio_send_list_cond[ii]);
+		synch_mtx_init(&hio_send_list_lock[ii]);
+		synch_cv_init(&hio_send_list_cond[ii]);
 	}
 	TAILQ_INIT(&hio_done_list);
-	mtx_init(&hio_done_list_lock);
-	cv_init(&hio_done_list_cond);
-	mtx_init(&hio_guard_lock);
-	cv_init(&hio_guard_cond);
+	synch_mtx_init(&hio_done_list_lock);
+	synch_cv_init(&hio_done_list_cond);
+	synch_mtx_init(&hio_guard_lock);
+	synch_cv_init(&hio_guard_cond);
 
 	/*
 	 * Allocate requests pool and initialize requests.
@@ -297,7 +297,7 @@ init_environment(struct hast_resource *res)
 		TAILQ_INSERT_HEAD(&hio_free_list, hio, hio_free_next);
 	}
 
-	mtx_init(&res->hr_lock);	
+	synch_mtx_init(&res->hr_lock);	
 	res->hr_local_state = HAST_STATE_UNKNOWN;
 	TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 		remote->r_state = HAST_STATE_UNKNOWN;
@@ -412,7 +412,7 @@ heartbeat_start_thread(void *arg)
 		pjdlog_debug(2, "heartbeat_start: (%p) Got free request.", hio);
 		complain = 1;
 		countdown = 0;
-		mtx_lock(&res->hr_lock);
+		synch_mtx_lock(&res->hr_lock);
 		/* Check if primary is OK and send a complain to secondary if it is not */
 		TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
 			if (remote->r_role == HAST_ROLE_PRIMARY &&
@@ -430,7 +430,7 @@ heartbeat_start_thread(void *arg)
 			TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 				if (remote->r_role == HAST_ROLE_SECONDARY)
 					QUEUE_INSERT1(hio, send, remote->r_ncomp);
-			mtx_unlock(&res->hr_lock);
+			synch_mtx_unlock(&res->hr_lock);
 			/* Register the complaint */
 			event_send(res, EVENT_COMPLAINT);
 			/* Take free request for check */
@@ -439,7 +439,7 @@ heartbeat_start_thread(void *arg)
 			pjdlog_debug(2, "heartbeat_start: (%p) Got free request.", hio);
 		} else {
 			res->hr_local_state = HAST_STATE_RUN;
-			mtx_unlock(&res->hr_lock);
+			synch_mtx_unlock(&res->hr_lock);
 		}
 
 		hio->hio_cmd = HIO_CHECK;
@@ -595,7 +595,7 @@ heartbeat_end_thread(void *arg)
 		pjdlog_debug(2, "heartbeat_end: (%p) Got request.", hio);
 		ncomp = 0;		
 		if (hio->hio_cmd == HIO_CHECK) {
-			mtx_lock(&res->hr_lock);
+			synch_mtx_lock(&res->hr_lock);
 			TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
 				if (hio->hio_status[ncomp].rs_error == 0) {
 					remote->r_role = hio->hio_status[ncomp].rs_role;
@@ -606,7 +606,7 @@ heartbeat_end_thread(void *arg)
 				}
 				ncomp++;
 			}
-			mtx_unlock(&res->hr_lock);
+			synch_mtx_unlock(&res->hr_lock);
 		}
 		pjdlog_debug(2, "heartbeat_end: (%p) Moving request to the free queue.", hio);
 		QUEUE_INSERT2(hio, free);
