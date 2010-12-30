@@ -134,42 +134,42 @@ static pthread_rwlock_t *hio_remote_lock;
 #define	QUEUE_INSERT1(hio, name, ncomp)	do {				\
 	bool _wakeup;							\
 									\
-	mtx_lock(&hio_##name##_list_lock[(ncomp)]);			\
+	synch_mtx_lock(&hio_##name##_list_lock[(ncomp)]);		\
 	_wakeup = TAILQ_EMPTY(&hio_##name##_list[(ncomp)]);		\
 	TAILQ_INSERT_TAIL(&hio_##name##_list[(ncomp)], (hio),		\
 	    hio_next[(ncomp)]);						\
-	mtx_unlock(&hio_##name##_list_lock[ncomp]);			\
+	synch_mtx_unlock(&hio_##name##_list_lock[ncomp]);		\
 	if (_wakeup)							\
-		cv_signal(&hio_##name##_list_cond[(ncomp)]);		\
+		synch_cv_signal(&hio_##name##_list_cond[(ncomp)]);	\
 } while (0)
 #define	QUEUE_INSERT2(hio, name)	do {				\
 	bool _wakeup;							\
 									\
-	mtx_lock(&hio_##name##_list_lock);				\
+	synch_mtx_lock(&hio_##name##_list_lock);			\
 	_wakeup = TAILQ_EMPTY(&hio_##name##_list);			\
 	TAILQ_INSERT_TAIL(&hio_##name##_list, (hio), hio_##name##_next);\
-	mtx_unlock(&hio_##name##_list_lock);				\
+	synch_mtx_unlock(&hio_##name##_list_lock);			\
 	if (_wakeup)							\
-		cv_signal(&hio_##name##_list_cond);			\
+		synch_cv_signal(&hio_##name##_list_cond);		\
 } while (0)
 #define	QUEUE_TAKE1(hio, name, ncomp)	do {				\
-	mtx_lock(&hio_##name##_list_lock[(ncomp)]);			\
+	synch_mtx_lock(&hio_##name##_list_lock[(ncomp)]);		\
 	while (((hio) = TAILQ_FIRST(&hio_##name##_list[(ncomp)])) == NULL) { \
-		cv_wait(&hio_##name##_list_cond[(ncomp)],		\
+		synch_cv_wait(&hio_##name##_list_cond[(ncomp)],		\
 		    &hio_##name##_list_lock[(ncomp)]);			\
 	}								\
 	TAILQ_REMOVE(&hio_##name##_list[(ncomp)], (hio),		\
 	    hio_next[(ncomp)]);						\
-	mtx_unlock(&hio_##name##_list_lock[(ncomp)]);			\
+	synch_mtx_unlock(&hio_##name##_list_lock[(ncomp)]);		\
 } while (0)
 #define	QUEUE_TAKE2(hio, name)	do {					\
-	mtx_lock(&hio_##name##_list_lock);				\
+	synch_mtx_lock(&hio_##name##_list_lock);			\
 	while (((hio) = TAILQ_FIRST(&hio_##name##_list)) == NULL) {	\
-		cv_wait(&hio_##name##_list_cond,			\
+		synch_cv_wait(&hio_##name##_list_cond,			\
 		    &hio_##name##_list_lock);				\
 	}								\
 	TAILQ_REMOVE(&hio_##name##_list, (hio), hio_##name##_next);	\
-	mtx_unlock(&hio_##name##_list_lock);				\
+	synch_mtx_unlock(&hio_##name##_list_lock);			\
 } while (0)
 
 static struct hast_resource *gres;
@@ -287,22 +287,22 @@ init_environment(struct hast_resource *res)
 	 * Initialize lists, their locks and theirs condition variables.
 	 */
 	TAILQ_INIT(&hio_free_list);
-	mtx_init(&hio_free_list_lock);
-	cv_init(&hio_free_list_cond);
+	synch_mtx_init(&hio_free_list_lock);
+	synch_cv_init(&hio_free_list_cond);
 	for (ii = 0; ii < ncomps; ii++) {
 		TAILQ_INIT(&hio_send_list[ii]);
-		mtx_init(&hio_send_list_lock[ii]);
-		cv_init(&hio_send_list_cond[ii]);
+		synch_mtx_init(&hio_send_list_lock[ii]);
+		synch_cv_init(&hio_send_list_cond[ii]);
 		TAILQ_INIT(&hio_recv_list[ii]);
-		mtx_init(&hio_recv_list_lock[ii]);
-		cv_init(&hio_recv_list_cond[ii]);
+		synch_mtx_init(&hio_recv_list_lock[ii]);
+		synch_cv_init(&hio_recv_list_cond[ii]);
 	}
 	for (ii = 0; ii < res->hr_remote_cnt; ii++) {
-		rw_init(&hio_remote_lock[ii]);
+		synch_rw_init(&hio_remote_lock[ii]);
 	}
 	TAILQ_INIT(&hio_done_list);
-	mtx_init(&hio_done_list_lock);
-	cv_init(&hio_done_list_cond);
+	synch_mtx_init(&hio_done_list_lock);
+	synch_cv_init(&hio_done_list_cond);
 
 	/*
 	 * Allocate requests pool and initialize requests.
@@ -341,7 +341,7 @@ init_environment(struct hast_resource *res)
 static void
 init_local(struct hast_resource *res)
 {
-	mtx_init(&res->hr_lock);
+	synch_mtx_init(&res->hr_lock);
 }
 
 static bool
@@ -603,7 +603,7 @@ remote_close(struct hast_remote *remote, int ncomp)
 {
 	struct hast_resource *res = remote->r_res;
 	
-	rw_wlock(&hio_remote_lock[ncomp]);
+	synch_rw_wlock(&hio_remote_lock[ncomp]);
 	/*
 	 * A race is possible between dropping rlock and acquiring wlock -
 	 * another thread can close connection in-between.
@@ -611,7 +611,7 @@ remote_close(struct hast_remote *remote, int ncomp)
 	if (!ISCONNECTED(remote, ncomp)) {
 		assert(remote->r_in == NULL);
 		assert(remote->r_out == NULL);
-		rw_unlock(&hio_remote_lock[ncomp]);
+		synch_rw_unlock(&hio_remote_lock[ncomp]);
 		return;
 	}
 
@@ -627,7 +627,7 @@ remote_close(struct hast_remote *remote, int ncomp)
 	proto_close(remote->r_out);
 	remote->r_out = NULL;
 
-	rw_unlock(&hio_remote_lock[ncomp]);
+	synch_rw_unlock(&hio_remote_lock[ncomp]);
 
 	pjdlog_warning("Disconnected from %s.", remote->r_addr);
 
@@ -696,9 +696,9 @@ remote_send_thread(void *arg)
 		nv = nv_alloc();
 		cmd = HIO_STATE;
 		nv_add_uint8(nv, cmd, "cmd");
-		mtx_lock(&res->hr_lock);
+		synch_mtx_lock(&res->hr_lock);
 		nv_add_uint8(nv, res->hr_local_state, "state");
-		mtx_unlock(&res->hr_lock);
+		synch_mtx_unlock(&res->hr_lock);
 		nv_add_uint64(nv, hio->hio_seq, "seq");
 		if (nv_error(nv) != 0) {
 			hio->hio_remote_status[ncomp].rs_error = nv_error(nv);
@@ -713,9 +713,9 @@ remote_send_thread(void *arg)
 		/*
 		 * Protect connection from disappearing.
 		 */
-		rw_rlock(&hio_remote_lock[ncomp]);
+		synch_rw_rlock(&hio_remote_lock[ncomp]);
 		if (!ISCONNECTED(remote, ncomp)) {
-			rw_unlock(&hio_remote_lock[ncomp]);
+			synch_rw_unlock(&hio_remote_lock[ncomp]);
 			hio->hio_remote_status[ncomp].rs_error = ENOTCONN;
 			goto done_queue;
 		}
@@ -727,13 +727,13 @@ remote_send_thread(void *arg)
 		pjdlog_debug(2,
 		    "remote_send[%u]: (%p) Moving request to the recv queue.",
 			     ncomp, hio);
-		mtx_lock(&hio_recv_list_lock[ncomp]);
+		synch_mtx_lock(&hio_recv_list_lock[ncomp]);
 		wakeup = TAILQ_EMPTY(&hio_recv_list[ncomp]);
 		TAILQ_INSERT_TAIL(&hio_recv_list[ncomp], hio, hio_next[ncomp]);
-		mtx_unlock(&hio_recv_list_lock[ncomp]);
+		synch_mtx_unlock(&hio_recv_list_lock[ncomp]);
 		if (hast_proto_send(res, remote->r_out, nv, NULL, 0) < 0) {
 			hio->hio_remote_status[ncomp].rs_error = errno;
-			rw_unlock(&hio_remote_lock[ncomp]);
+			synch_rw_unlock(&hio_remote_lock[ncomp]);
 			pjdlog_debug(2,
 			    "remote_send[%u]: (%p) Unable to send request.",
 			    ncomp, hio);
@@ -744,15 +744,15 @@ remote_send_thread(void *arg)
 			 * Take request back from the receive queue and move
 			 * it immediately to the done queue.
 			 */
-			mtx_lock(&hio_recv_list_lock[ncomp]);
+			synch_mtx_lock(&hio_recv_list_lock[ncomp]);
 			TAILQ_REMOVE(&hio_recv_list[ncomp], hio, hio_next[ncomp]);
-			mtx_unlock(&hio_recv_list_lock[ncomp]);
+			synch_mtx_unlock(&hio_recv_list_lock[ncomp]);
 			goto done_queue;
 		}
-		rw_unlock(&hio_remote_lock[ncomp]);
+		synch_rw_unlock(&hio_remote_lock[ncomp]);
 		nv_free(nv);
 		if (wakeup)
-			cv_signal(&hio_recv_list_cond[ncomp]);
+			synch_cv_signal(&hio_recv_list_cond[ncomp]);
 		continue;
 done_queue:
 		nv_free(nv);
@@ -791,39 +791,39 @@ remote_recv_thread(void *arg)
 	for (;;) {
 		/* Wait until there is anything to receive. */
 		pjdlog_debug(2, "remote_recv[%u]: Waiting request.", ncomp);
-		mtx_lock(&hio_recv_list_lock[ncomp]);
+		synch_mtx_lock(&hio_recv_list_lock[ncomp]);
 		while (TAILQ_EMPTY(&hio_recv_list[ncomp])) {
 			pjdlog_debug(2, "remote_recv[%u]: No requests, waiting.",
 			    ncomp);
-			cv_wait(&hio_recv_list_cond[ncomp],
+			synch_cv_wait(&hio_recv_list_cond[ncomp],
 			    &hio_recv_list_lock[ncomp]);
 		}
-		mtx_unlock(&hio_recv_list_lock[ncomp]);
+		synch_mtx_unlock(&hio_recv_list_lock[ncomp]);
 		pjdlog_debug(2, "remote_recv[%u]: There is something to receive.",
 		    ncomp);
-		rw_rlock(&hio_remote_lock[ncomp]);
+		synch_rw_rlock(&hio_remote_lock[ncomp]);
 		if (!ISCONNECTED(remote, ncomp)) {
-			rw_unlock(&hio_remote_lock[ncomp]);
+			synch_rw_unlock(&hio_remote_lock[ncomp]);
 			/*
 			 * Connection is dead, so move all pending requests to
 			 * the done queue (one-by-one).
 			 */
-			mtx_lock(&hio_recv_list_lock[ncomp]);
+			synch_mtx_lock(&hio_recv_list_lock[ncomp]);
 			hio = TAILQ_FIRST(&hio_recv_list[ncomp]);
 			assert(hio != NULL);
 			TAILQ_REMOVE(&hio_recv_list[ncomp], hio,
 			    hio_next[ncomp]);
-			mtx_unlock(&hio_recv_list_lock[ncomp]);
+			synch_mtx_unlock(&hio_recv_list_lock[ncomp]);
 			goto done_queue;
 		}
 		if (hast_proto_recv_hdr(remote->r_in, &nv) < 0) {
 			pjdlog_errno(LOG_ERR,
 			    "Unable to receive reply header");
-			rw_unlock(&hio_remote_lock[ncomp]);
+			synch_rw_unlock(&hio_remote_lock[ncomp]);
 			remote_close(remote, ncomp);
 			continue;
 		}
-		rw_unlock(&hio_remote_lock[ncomp]);
+		synch_rw_unlock(&hio_remote_lock[ncomp]);
 		pjdlog_debug(2, "remote_recv[%u]: Got reply header.", ncomp);
 		seq = nv_get_uint64(nv, "seq");
 		if (seq == 0) {
@@ -831,7 +831,7 @@ remote_recv_thread(void *arg)
 			nv_free(nv);
 			continue;
 		}
-		mtx_lock(&hio_recv_list_lock[ncomp]);
+		synch_mtx_lock(&hio_recv_list_lock[ncomp]);
 		TAILQ_FOREACH(hio, &hio_recv_list[ncomp], hio_next[ncomp]) {
 			if (hio->hio_seq == seq) {
 				TAILQ_REMOVE(&hio_recv_list[ncomp], hio,
@@ -839,7 +839,7 @@ remote_recv_thread(void *arg)
 				break;
 			}
 		}
-		mtx_unlock(&hio_recv_list_lock[ncomp]);		
+		synch_mtx_unlock(&hio_recv_list_lock[ncomp]);		
 		if (hio == NULL) {
 			pjdlog_error("Found no request matching received 'seq' field (%ju).",
 			    (uintmax_t)seq);
@@ -897,7 +897,7 @@ heartbeat_end_thread(void *arg)
 		 * Get nodes' status from hio.
 		 */
 		/* XXX: rs_error is ignored for now */
-		mtx_lock(&res->hr_lock);
+		synch_mtx_lock(&res->hr_lock);
 		remote_run = NULL;
 		TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
 			remote->r_state =
@@ -906,13 +906,13 @@ heartbeat_end_thread(void *arg)
 			    remote->r_state == HAST_STATE_STARTING)
 				remote_run = remote->r_addr;
 		}
-		mtx_unlock(&res->hr_lock);
+		synch_mtx_unlock(&res->hr_lock);
 		/*
 		 * Check the resource state and try to restart the
 		 * resource if necessary.
 		 */
 		if (remote_run == NULL) {
-			mtx_lock(&res->hr_lock);
+			synch_mtx_lock(&res->hr_lock);
 			switch(res->hr_local_state) {
 			case HAST_STATE_RUN:
 				pjdlog_debug(2,
@@ -927,7 +927,7 @@ heartbeat_end_thread(void *arg)
 					pjdlog_debug(2,
 					    "heartbeat_end: (%p) Resource is %s and exceeded max start attempts %d.",
 					    hio, state2str(res->hr_local_state), res->hr_local_attempts_max);
-					mtx_unlock(&res->hr_lock);
+					synch_mtx_unlock(&res->hr_lock);
 					primary_exitx(EX_UNAVAILABLE, "Unable to start service after %d attempts",
 					    res->hr_local_attempts);
 					/* NOTREACHED */
@@ -936,9 +936,9 @@ heartbeat_end_thread(void *arg)
 				pjdlog_debug(2,
 				    "heartbeat_end: (%p) Resource is %s. Starting (attempt %d).",
 				    hio, state2str(res->hr_local_state), res->hr_local_attempts);
-				mtx_unlock(&res->hr_lock);
+				synch_mtx_unlock(&res->hr_lock);
 				event_send(res, EVENT_START);
-				mtx_lock(&res->hr_lock);
+				synch_mtx_lock(&res->hr_lock);
 				pjdlog_debug(2,
 				    "heartbeat_end: (%p) setting hr_local_state to '%s'.",
 				    hio, state2str(HAST_STATE_STARTING));
@@ -949,16 +949,16 @@ heartbeat_end_thread(void *arg)
 			default:
 				assert(!"Wrong state.");
 			}
-			mtx_unlock(&res->hr_lock);
+			synch_mtx_unlock(&res->hr_lock);
 		} else {
 			pjdlog_error("heartbeat_end: (%p) Resource on secondary %s is not STOPPED.",
 			    hio, remote_run);
 			if (res->hr_local_state == HAST_STATE_RUN) {
 				pjdlog_debug(1, "heartbeat_end: (%p) Stopping resource.", hio);
 				event_send(res, EVENT_STOP);
-				mtx_lock(&res->hr_lock);				
+				synch_mtx_lock(&res->hr_lock);				
 				res->hr_local_state = HAST_STATE_STOPPING;
-				mtx_unlock(&res->hr_lock);
+				synch_mtx_unlock(&res->hr_lock);
 			}
 		}
 		pjdlog_debug(2, "heartbeat_end: (%p) Moving request to the free queue.", hio);
@@ -973,17 +973,17 @@ guard_one(struct hast_remote *remote)
 {
 	struct proto_conn *in, *out;
 
-	rw_rlock(&hio_remote_lock[remote->r_ncomp]);
+	synch_rw_rlock(&hio_remote_lock[remote->r_ncomp]);
 
 	if (!real_remote(remote)) {
-		rw_unlock(&hio_remote_lock[remote->r_ncomp]);
+		synch_rw_unlock(&hio_remote_lock[remote->r_ncomp]);
 		return;
 	}
 
 	if (ISCONNECTED(remote, remote->r_ncomp)) {
 		assert(remote->r_in != NULL);
 		assert(remote->r_out != NULL);
-		rw_unlock(&hio_remote_lock[remote->r_ncomp]);
+		synch_rw_unlock(&hio_remote_lock[remote->r_ncomp]);
 		pjdlog_debug(2, "remote_guard: Connection to %s is ok.",
 		    remote->r_addr);
 		return;
@@ -995,18 +995,18 @@ guard_one(struct hast_remote *remote)
 	 * Upgrade the lock. It doesn't have to be atomic as no other thread
 	 * can change connection status from disconnected to connected.
 	 */
-	rw_unlock(&hio_remote_lock[remote->r_ncomp]);
+	synch_rw_unlock(&hio_remote_lock[remote->r_ncomp]);
 	pjdlog_debug(2, "remote_guard: Reconnecting to %s.",
 	    remote->r_addr);
 	in = out = NULL;
 	if (init_remote(remote, &in, &out)) {
-		rw_wlock(&hio_remote_lock[remote->r_ncomp]);
+		synch_rw_wlock(&hio_remote_lock[remote->r_ncomp]);
 		assert(remote->r_in == NULL);
 		assert(remote->r_out == NULL);
 		assert(in != NULL && out != NULL);
 		remote->r_in = in;
 		remote->r_out = out;
-		rw_unlock(&hio_remote_lock[remote->r_ncomp]);
+		synch_rw_unlock(&hio_remote_lock[remote->r_ncomp]);
 		pjdlog_info("Successfully reconnected to %s.",
 		    remote->r_addr);
 	} else {
