@@ -94,7 +94,7 @@
 #define roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
 #endif
 
-#ifndef le16toh
+#if !defined(htole64) && !defined(HAVE_FUNC1_HTOLE64_SYS_TYPES_H)
 /* XXX: LITTLE_ENDIAN */
 #define	htole16(x)	((uint16_t)(x))
 #define	htole32(x)	((uint32_t)(x))

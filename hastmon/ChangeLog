@@ -1,10 +1,15 @@
-hastmon (0.X.X)
+hastmon (0.3.0)
 
   * Authentication by key.
 
   * Build using mk-configure.
 
--- Mikolaj Golub <to.my.trociny@gmail.com> 201X/XX/XX
+  * Port to Linux (tested on Debian 5.0) and NetBSD (5.1). So currently
+    hastmon can be run at least on 3 platforms (FreeBSD, NetBSD, Linux).
+
+  * Bug fixes and small updates.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2011/XX/XX
 
 hastmon (0.2.0)
 
