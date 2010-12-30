@@ -33,6 +33,9 @@
 #ifndef	_HAST_H_
 #define	_HAST_H_
 
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 #ifdef HAVE_DEFINE_TAILQ_FOREACH_SAFE_SYS_QUEUE_H
 #include <sys/queue.h>
 #else
