@@ -23,6 +23,8 @@ MKC_CHECK_FUNCS1+=	setproctitle:unistd.h setproctitle:setproctitle.h
 
 MKC_CHECK_FUNCS1+=	closefrom:unistd.h
 
+MKC_CHECK_FUNCS1+=	htole64:sys/types.h
+
 PROG=	hastmon
 SRCS+=	control.c
 SRCS+=	ebuf.c event.c
