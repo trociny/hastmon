@@ -45,6 +45,11 @@
 #define	MAX_SEND_SIZE	131072
 #endif
 
+/* XXX: Just to suppress error when compiling on OpenBSD. */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL	0x0
+#endif
+
 int
 proto_common_send(int fd, const unsigned char *data, size_t size)
 {
