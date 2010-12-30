@@ -6,7 +6,8 @@ MKC_COMMON_DEFINES.FreeBSD+=	-D_KERN_HOSTUUID
 MKC_CHECK_HEADERS+=	pthread_np.h
 MKC_CHECK_FUNCS1+=	pthread_mutex_isowned_np:pthread_np.h
 
-MKC_CHECK_FUNCS2+=	arc4random:stdlib.h arc4random_buf:stdlib.h
+MKC_CHECK_FUNCS0+=	arc4random:stdlib.h
+MKC_CHECK_FUNCS2+=	arc4random_buf:stdlib.h
 
 MKC_CHECK_FUNCS2+=	pthread_condattr_setclock:pthread.h
 
