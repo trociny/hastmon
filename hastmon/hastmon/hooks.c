@@ -34,6 +34,12 @@
 
 #include <sys/param.h>
 
+#include <sys/param.h>	/* MAXHOSTNAMELEN */
+#ifdef HAVE_DEFINE_TAILQ_FOREACH_SAFE_SYS_QUEUE_H
+#include <sys/queue.h>
+#else
+#include "queue.h"
+#endif
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <sys/wait.h>
