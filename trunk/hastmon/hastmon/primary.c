@@ -544,7 +544,9 @@ hastmon_primary(struct hast_resource *res)
 	(void)pidfile_close(pfh);
 	hook_fini();
 
-#if defined(HAVE_FUNC1_SETPROCTITLE_UNISTD_H) || defined(HAVE_FUNC1_SETPROCTITLE_SETPROCTITLE_H)
+#if defined(HAVE_FUNC1_SETPROCTITLE_UNISTD_H) || \
+	defined(HAVE_FUNC1_SETPROCTITLE_STDLIB_H) || \
+	defined(HAVE_FUNC1_SETPROCTITLE_SETPROCTITLE_H)
 	setproctitle("%s (primary)", res->hr_name);
 #endif
 

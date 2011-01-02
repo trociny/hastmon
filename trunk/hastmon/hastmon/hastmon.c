@@ -457,18 +457,19 @@ terminate_worker(struct hast_resource *res, int sig)
 			break;
 		}
 	}
-	
+
+	pid = res->hr_workerpid;
+	child_cleanup(res);
+
 	/* Wait for it to exit. */
-	if ((pid = waitpid(res->hr_workerpid,
-		    &status, 0)) != res->hr_workerpid) {
+	if (waitpid(pid, &status, 0) != pid) {
 		/* We can only log the problem. */
 		pjdlog_errno(LOG_ERR,
 		    "Waiting for worker process (pid=%u) failed",
-		    (unsigned int)res->hr_workerpid);
+		    (unsigned int)pid);
 	} else {
-		child_exit_log(res->hr_workerpid, status);
+		child_exit_log(pid, status);
 	}
-	child_cleanup(res);
 }
 
 #ifndef HAVE_FUNC2_ARC4RANDOM_STDLIB_H
