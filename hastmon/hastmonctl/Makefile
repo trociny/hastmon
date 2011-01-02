@@ -31,26 +31,26 @@ SRCS+=	y.tab.h
 SRCS+=	auth.c
 MAN=	hastmonctl.8
 
-BINDIR=${PREFIX}/sbin
-MANDIR=${PREFIX}/man
-CFLAGS+=-g -O0
-CFLAGS+=-I${.CURDIR}/../hastmon
-CFLAGS+=-DINET
+BINDIR=	${PREFIX}/sbin
+MANDIR=	${PREFIX}/man
+
+CFLAGS+=	-I${.CURDIR}/../hastmon
+CFLAGS+=	-DINET
 .if "${MK_INET6_SUPPORT}" != "no"
-CFLAGS+=-DINET6
+CFLAGS+=	-DINET6
 .endif
 # This is needed to have WARNS > 1.
-CFLAGS+=-DYY_NO_UNPUT
+CFLAGS+=	-DYY_NO_UNPUT
 
 .if "${MK_OPENSSL}" != "no"
-LDADD+=	-lcrypto
-CFLAGS+=-DHAVE_CRYPTO
+LDADD+=		-lcrypto
+CFLAGS+=	-DHAVE_CRYPTO
 .endif
 
-YFLAGS+=-d
-YFLAGS+=-v
+YFLAGS+=	-d
+YFLAGS+=	-v
 
-CLEANFILES=y.tab.c y.tab.h y.output _*
+CLEANFILES=	y.tab.c y.tab.h y.output _*
 
 .include <mkc.own.mk>
 .include <mkc.prog.mk>
