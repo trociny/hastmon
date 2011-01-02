@@ -709,13 +709,7 @@ listen_accept(void)
 	if (token == NULL) {
 		assert(remote->r_out == NULL);
 		pjdlog_debug(1, "Initial connection from %s.", raddr);
-		if (res->hr_workerpid != 0) {
-			assert(remote->r_in == NULL);
-			pjdlog_debug(1,
-			    "Worker process exists (pid=%u), stopping it.",
-			    (unsigned int)res->hr_workerpid);
-			terminate_worker(res, SIGINT);
-		} else if (remote->r_in != NULL) {
+		if (remote->r_in != NULL) {
 			char oaddr[256];
 
 			proto_remote_address(remote->r_in, oaddr, sizeof(oaddr));
@@ -724,6 +718,12 @@ listen_accept(void)
 			    oaddr, raddr);
 			proto_close(remote->r_in);
 			remote->r_in = NULL;
+		}
+		if (res->hr_workerpid != 0) {
+			pjdlog_debug(1,
+			    "Worker process exists (pid=%u), stopping it.",
+			    (unsigned int)res->hr_workerpid);
+			terminate_worker(res, SIGINT);
 		}
 	}
 
@@ -761,7 +761,6 @@ listen_accept(void)
 		remote->r_out = conn;
 		pjdlog_debug(1, "Outgoing connection to %s configured.", raddr);
 		hastmon_secondary(remote, nvin);
-		pjdlog_debug(1, "listen_accept: res->hr_workerpid = %d", res->hr_workerpid);
 	}
 	nv_free(nvin);
 	nv_free(nvout);

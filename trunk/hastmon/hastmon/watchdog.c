@@ -191,6 +191,11 @@ watchdog_exit(int exitcode, const char *fmt, ...)
 	va_list ap;
 
 	assert(exitcode != EX_OK);
+	/*
+	 * We lock res to avoid races when exit is initiated by two
+	 * threads simultaneosly.
+	 */
+	synch_mtx_lock(&gres->hr_lock);
 	va_start(ap, fmt);
 	pjdlogv_errno(LOG_ERR, fmt, ap);
 	va_end(ap);
@@ -204,6 +209,11 @@ watchdog_exitx(int exitcode, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
+	/*
+	 * We lock res to avoid races when exit is initiated by two
+	 * threads simultaneosly.
+	 */
+	synch_mtx_lock(&gres->hr_lock);
 	pjdlogv(exitcode == EX_OK ? LOG_INFO : LOG_ERR, fmt, ap);
 	va_end(ap);
 	cleanup(gres);
@@ -226,11 +236,10 @@ init_environment(struct hast_resource *res)
 	unsigned int ii, ncomps;
 	sigset_t mask;
 
-	/*
-	 * In the future it might be per-resource value.
-	 */
 	ncomps = res->hr_remote_cnt;
 
+	synch_mtx_init(&res->hr_lock);
+	
 	/*
 	 * Allocate memory needed by lists.
 	 */
@@ -297,7 +306,6 @@ init_environment(struct hast_resource *res)
 		TAILQ_INSERT_HEAD(&hio_free_list, hio, hio_free_next);
 	}
 
-	synch_mtx_init(&res->hr_lock);	
 	res->hr_local_state = HAST_STATE_UNKNOWN;
 	TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 		remote->r_state = HAST_STATE_UNKNOWN;
@@ -349,7 +357,6 @@ hastmon_watchdog(struct hast_resource *res)
 		/* This is parent. */
 		/* Declare that we are receiver. */
 		proto_recv(res->hr_event, NULL, 0);
-		pjdlog_debug(1, "hastmon_watchdog: setting res->hr_workerpid = pid");
 		res->hr_workerpid = pid;
 		return;
 	}
