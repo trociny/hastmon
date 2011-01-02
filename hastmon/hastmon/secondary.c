@@ -104,7 +104,6 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 
 	res = remote->r_res;
 
-	pjdlog_debug(2, "%s:%s:%d: res->hr_workerpid = %d", __FILE__, __func__, __LINE__, res->hr_workerpid);
 	/*
 	 * Empty complaints list.
 	 */
@@ -158,6 +157,8 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 
 	PJDLOG_VERIFY(sigemptyset(&mask) == 0);
 	PJDLOG_VERIFY(sigprocmask(SIG_SETMASK, &mask, NULL) == 0);
+
+	synch_mtx_init(&res->hr_lock);
 
 	/* Declare that we are sender. */
 	proto_send(res->hr_event, NULL, 0);
