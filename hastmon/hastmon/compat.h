@@ -94,7 +94,8 @@
 #define roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
 #endif
 
-#if !defined(htole64) && !defined(HAVE_FUNC1_HTOLE64_SYS_TYPES_H)
+/*#if !defined(htole64) && !defined(HAVE_FUNC1_HTOLE64_SYS_TYPES_H)*/
+#ifndef htole64
 /* XXX: LITTLE_ENDIAN */
 #define	htole16(x)	((uint16_t)(x))
 #define	htole32(x)	((uint32_t)(x))
@@ -103,6 +104,12 @@
 #define	le16toh(x)	((uint16_t)(x))
 #define	le32toh(x)	((uint32_t)(x))
 #define	le64toh(x)	((uint64_t)(x))
+#else
+#if !defined(le64toh) && defined(letoh64) /* OpenBSD */
+#define le16toh		letoh16
+#define le32toh		letoh32
+#define le64toh		letoh64
+#endif
 #endif
 
 #ifndef HAVE_FUNC3_STRLCAT_STRING_H
