@@ -19,7 +19,7 @@ MKC_CHECK_DEFINES+=	TAILQ_FOREACH_SAFE:sys/queue.h
 MKC_CHECK_FUNCS3+=	strlcat:string.h strlcpy:string.h
 MKC_SOURCE_FUNCLIBS+=	strlcat strlcpy
 
-MKC_CHECK_FUNCS1+=	setproctitle:unistd.h setproctitle:setproctitle.h
+MKC_CHECK_FUNCS1+=	setproctitle:unistd.h setproctitle:stdlib.h setproctitle:setproctitle.h
 
 MKC_CHECK_FUNCS1+=	closefrom:unistd.h
 
@@ -41,27 +41,27 @@ SRCS+=	auth.c
 SRCS+=	pidfile.c
 MAN=	hastmon.8 hastmon.conf.5
 
-BINDIR=${PREFIX}/sbin
-MANDIR=${PREFIX}/man
-CFLAGS+=-g -O0
-CFLAGS+=-I${.CURDIR}
-CFLAGS+=-DINET
+BINDIR=	${PREFIX}/sbin
+MANDIR=	${PREFIX}/man
+
+CFLAGS+=	-I${.CURDIR}
+CFLAGS+=	-DINET
 .if "${MK_INET6_SUPPORT}" != "no"
-CFLAGS+=-DINET6
+CFLAGS+=	-DINET6
 .endif
 # This is needed to have WARNS > 1.
-CFLAGS+=-DYY_NO_UNPUT
+CFLAGS+=	-DYY_NO_UNPUT
 
-LDADD= -lpthread
+LDADD=	-lpthread
 .if "${MK_OPENSSL}" != "no"
-LDADD+=	-lcrypto
-CFLAGS+=-DHAVE_CRYPTO
+LDADD+=		-lcrypto
+CFLAGS+=	-DHAVE_CRYPTO
 .endif
 
-YFLAGS+=-d
-YFLAGS+=-v
+YFLAGS+=	-d
+YFLAGS+=	-v
 
-CLEANFILES=y.tab.c y.tab.h y.output _*
+CLEANFILES=	y.tab.c y.tab.h y.output _*
 
 .include <mkc.own.mk>
 .include <mkc.prog.mk>

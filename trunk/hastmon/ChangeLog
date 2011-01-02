@@ -1,5 +1,7 @@
 hastmon (0.3.0)
 
+  * Reload.
+
   * Authentication by key.
 
   * Build using mk-configure.
