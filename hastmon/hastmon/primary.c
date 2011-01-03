@@ -122,6 +122,11 @@ static pthread_cond_t hio_done_list_cond;
  * The lock below allows to synchornize access to remote connections.
  */
 static pthread_rwlock_t *hio_remote_lock;
+/*
+ * The lock below allows to avoid races when exit is initiated by two
+ * threads simultaneosly.
+ */
+static pthread_mutex_t exit_lock;
 
 /*
  * Maximum number of outstanding I/O requests.
@@ -193,11 +198,7 @@ primary_exit(int exitcode, const char *fmt, ...)
 	va_list ap;
 
 	assert(exitcode != EX_OK);
-	/*
-	 * We lock res to avoid races when exit is initiated by two
-	 * threads simultaneosly.
-	 */
-	synch_mtx_lock(&gres->hr_lock);
+	synch_mtx_lock(&exit_lock);
 	va_start(ap, fmt);
 	pjdlogv_errno(LOG_ERR, fmt, ap);
 	va_end(ap);
@@ -211,11 +212,7 @@ primary_exitx(int exitcode, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	/*
-	 * We lock res to avoid races when exit is initiated by two
-	 * threads simultaneosly.
-	 */
-	synch_mtx_lock(&gres->hr_lock);
+	synch_mtx_lock(&exit_lock);
 	pjdlogv(exitcode == EX_OK ? LOG_INFO : LOG_ERR, fmt, ap);
 	va_end(ap);
 	cleanup(gres);
@@ -351,6 +348,7 @@ init_environment(struct hast_resource *res)
 static void
 init_local(struct hast_resource *res)
 {
+	synch_mtx_init(&exit_lock);
 	synch_mtx_init(&res->hr_lock);
 }
 
