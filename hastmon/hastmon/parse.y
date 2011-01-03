@@ -63,7 +63,7 @@ extern char *yytext;
 
 static struct hastmon_config *lconfig;
 static struct hast_resource *curres;
-static bool mynode;
+static bool mynode, hadmynode;
 
 static char depth0_control[HAST_ADDRSIZE];
 static char depth0_listen[HAST_ADDRSIZE];
@@ -116,6 +116,44 @@ isitme(const char *name)
 	/*
 	 * Looks like this isn't about us.
 	 */
+	return (0);
+}
+
+static int
+node_names(char **namesp)
+{
+	static char names[MAXHOSTNAMELEN * 3];
+	char buf[MAXHOSTNAMELEN];
+	char *pos;
+	size_t bufsize;
+
+	if (gethostname(buf, sizeof(buf)) < 0) {
+		pjdlog_errno(LOG_ERR, "gethostname() failed");
+		return (-1);
+	}
+
+	/* First component of the host name. */
+	pos = strchr(buf, '.');
+	if (pos != NULL && pos != buf) {
+		(void)strlcpy(names, buf, MIN((size_t)(pos - buf + 1),
+		    sizeof(names)));
+		(void)strlcat(names, ", ", sizeof(names));
+	}
+
+	/* Full host name. */
+	(void)strlcat(names, buf, sizeof(names));
+
+#ifdef _KERN_HOSTUUID
+	/* Host UUID. */
+	bufsize = sizeof(buf);
+	if (sysctlbyname("kern.hostuuid", buf, &bufsize, NULL, 0) == 0) {
+		(void)strlcat(names, ", ", sizeof(names));
+		(void)strlcat(names, buf, sizeof(names));
+	}
+#endif
+
+	*namesp = names;
+
 	return (0);
 }
 
@@ -613,6 +651,20 @@ secret_statement:		SECRET STR
 resource_statement:	RESOURCE resource_start OB resource_entries CB
 	{
 		if (curres != NULL) {
+ 			/*
+			 * There must be section for this node, at least with
+			 * remote address configuration.
+			 */
+			if (!hadmynode) {
+				char *names;
+
+				if (node_names(&names) != 0)
+					return (1);
+				pjdlog_error("No resource %s configuration for this node (acceptable node names: %s).",
+				    curres->hr_name, names);
+				return (1);
+			}
+
 			/*
 			 * Let's see there are some resource-level settings
 			 * that we can use for node-level settings.
@@ -645,6 +697,8 @@ resource_statement:	RESOURCE resource_start OB resource_entries CB
 
 resource_start:	STR
 	{
+		hadmynode = false;
+
 		/*
 		 * Clear those, so we can tell if they were set at
 		 * resource-level or not.
@@ -723,7 +777,7 @@ resource_node_start:	STR
 			case 0:
 				break;
 			case 1:
-				mynode = true;
+				mynode = hadmynode = true;
 				break;
 			default:
 				assert(!"invalid isitme() return value");
