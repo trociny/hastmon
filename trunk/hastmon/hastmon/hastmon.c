@@ -638,7 +638,7 @@ listen_accept(void)
 			/* Check if worker is running. Initiate failovering if not.  */
 			if (res->hr_role == HAST_ROLE_SECONDARY) {
 				if (res->hr_workerpid == 0) {
-					pjdlog_debug(1, "%s worker is not running. Initiating failovering.", res->hr_name);
+					pjdlog_debug(1, "Worker is not running. Initiating failovering.");
 					res->hr_previous_role = HAST_ROLE_SECONDARY;
 					res->hr_role = HAST_ROLE_PRIMARY;
 					pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));

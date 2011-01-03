@@ -62,6 +62,11 @@
 #include "synch.h"
 
 static struct hast_resource *gres;
+/*
+ * The lock below allows to avoid races when exit is initiated by two
+ * threads simultaneosly.
+ */
+static pthread_mutex_t exit_lock;
 
 static void *respond_thread(void *arg);
 static void *local_check_thread(void *arg);
@@ -158,6 +163,7 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 	PJDLOG_VERIFY(sigemptyset(&mask) == 0);
 	PJDLOG_VERIFY(sigprocmask(SIG_SETMASK, &mask, NULL) == 0);
 
+	synch_mtx_init(&exit_lock);
 	synch_mtx_init(&res->hr_lock);
 
 	/* Declare that we are sender. */
@@ -217,6 +223,7 @@ secondary_exit(int exitcode, const char *fmt, ...)
 	va_list ap;
 
 	assert(exitcode != EX_OK);
+	synch_mtx_lock(&exit_lock);
 	va_start(ap, fmt);
 	pjdlogv_errno(LOG_ERR, fmt, ap);
 	va_end(ap);
