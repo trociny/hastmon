@@ -703,8 +703,7 @@ listen_accept(void)
 	}
 	/*
 	 * If there is no token, but we have half-open connection
-	 * (only remotein) or full connection (worker process is running)
-	 * we have to cancel those and accept the new connection.
+	 * (only remotein) we have to cancel it and accept the new connection.
 	 */
 	if (token == NULL) {
 		assert(remote->r_out == NULL);
@@ -718,12 +717,6 @@ listen_accept(void)
 			    oaddr, raddr);
 			proto_close(remote->r_in);
 			remote->r_in = NULL;
-		}
-		if (res->hr_workerpid != 0) {
-			pjdlog_debug(1,
-			    "Worker process exists (pid=%u), stopping it.",
-			    (unsigned int)res->hr_workerpid);
-			terminate_worker(res, SIGINT);
 		}
 	}
 
@@ -760,6 +753,16 @@ listen_accept(void)
 	} else {
 		remote->r_out = conn;
 		pjdlog_debug(1, "Outgoing connection to %s configured.", raddr);
+		/*
+		 * If there worker process is running (e.g. started by
+		 * other primary node) we have to terminate it.
+		 */
+		if (res->hr_workerpid != 0) {
+			pjdlog_debug(1,
+			    "Worker process exists (pid=%u), stopping it.",
+			    (unsigned int)res->hr_workerpid);
+			terminate_worker(res, SIGINT);
+		}
 		hastmon_secondary(remote, nvin);
 	}
 	nv_free(nvin);
