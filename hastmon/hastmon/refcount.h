@@ -29,6 +29,12 @@
 #ifndef _REFCOUNT_H_
 #define _REFCOUNT_H_
 
+#ifdef _HAVE_SYS_REFCOUNT_H
+#include <sys/refcount.h>
+#else /* ! _HAVE_SYS_REFCOUNT_H */
+
+#include <stdbool.h>
+
 #include "synch.h"
 
 static pthread_mutex_t _refcount_lock;
@@ -36,8 +42,13 @@ static pthread_mutex_t _refcount_lock;
 static __inline void
 refcount_init(volatile u_int *count, u_int value)
 {
+	static bool initialised = false;
 
-	synch_mtx_init(&_refcount_lock);
+	if (!initialised) {
+		synch_mtx_init(&_refcount_lock);
+		initialised = true;
+	}
+
 	*count = value;
 }
 
@@ -59,5 +70,7 @@ refcount_release(volatile u_int *count)
 	synch_mtx_unlock(&_refcount_lock);
 	return (*count == 0);
 }
+
+#endif	/* _HAVE_SYS_REFCOUNT_H */
 
 #endif	/* ! _REFCOUNT_H_ */
