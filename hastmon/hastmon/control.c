@@ -240,11 +240,8 @@ control_status(struct hastmon_config *cfg, struct nv *nvout,
 		    no, remote->r_ncomp);
 	}
 	nv_add_uint8(nvout, res->hr_role, "role%u", no);
-	pjdlog_info("control: role is %s (%d).",
-	    role2str(res->hr_role), res->hr_role);
 	cnt = complaints_cnt(res);
 	nv_add_int32(nvout, cnt, "complaints%u", no);
-	pjdlog_info("control: complaints count is %d.", cnt);
 	nv_add_int32(nvout, res->hr_complaint_critical_cnt,
 	    "complaints_critical%u", no);
 	nv_add_int32(nvout, res->hr_complaint_interval,
