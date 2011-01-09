@@ -409,7 +409,8 @@ heartbeat_start_thread(void *arg)
 	struct hast_remote *remote;
 	struct hio *hio;
 	unsigned int ii, ncomp, ncomps, countdown;
-	int error, complain;
+	bool complain;
+	int error;
 
 	ncomps = res->hr_remote_cnt;
 
@@ -417,14 +418,14 @@ heartbeat_start_thread(void *arg)
 		pjdlog_debug(2, "heartbeat_start: Taking free request.");
 		QUEUE_TAKE2(hio, free);
 		pjdlog_debug(2, "heartbeat_start: (%p) Got free request.", hio);
-		complain = 1;
+		complain = true;
 		countdown = 0;
 		synch_mtx_lock(&res->hr_lock);
 		/* Check if primary is OK and send a complain to secondary if it is not */
 		TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
 			if (remote->r_role == HAST_ROLE_PRIMARY &&
 			    remote->r_state == HAST_STATE_RUN)
-				complain = 0;
+				complain = false;
 			if (remote->r_role == HAST_ROLE_SECONDARY)
 				countdown++;
 		}
