@@ -152,19 +152,19 @@ control_status(struct nv *nv)
 		printf("  role: %s\n", role2str(role));
 		printf("  exec: %s\n",
 		    nv_get_string(nv, "exec%u", ii));
-		printf("  remoteaddr:");
+		printf("  remote:");
 		for(jj = 0; ;jj++) {
 			str = nv_get_string(nv, "remoteaddr%u.%u", ii, jj);
 			if (str == NULL)
 				break;
-			printf(" %s", str);
+			printf("\n    %s", str);
 			switch (role) {
 			case HAST_ROLE_PRIMARY:
 			case HAST_ROLE_SECONDARY:			
 				str = nv_get_string(nv, "remotestate%u.%u", ii, jj);
 				if (str == NULL)
 					break;
-				printf("(%s)", str);
+				printf(" (%s)", str);
 				break;
 			case HAST_ROLE_WATCHDOG:			
 				str = nv_get_string(nv, "remoterole%u.%u", ii, jj);
@@ -173,7 +173,7 @@ control_status(struct nv *nv)
 				str1 = nv_get_string(nv, "remotestate%u.%u", ii, jj);
 				if (str == NULL)
 					break;
-				printf("(%s/%s)", str, str1);
+				printf(" (%s/%s)", str, str1);
 				break;
 			default:
 				break;
@@ -191,6 +191,7 @@ control_status(struct nv *nv)
 		       nv_get_int32(nv, "complaints_critical%u", ii));
 		printf("  heartbeat: %d sec\n",
 		       nv_get_int32(nv, "heartbeat%u", ii));
+		printf("\n");
 	}
 	return (ret);
 }
