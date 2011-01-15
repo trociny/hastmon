@@ -1,17 +1,18 @@
 hastmon (0.3.0)
 
-  * Reload.
+  * Configuration reload.
 
   * Authentication by key.
 
   * Build using mk-configure.
 
   * Port to Linux (tested on Debian 5.0) and NetBSD (5.1). So currently
-    hastmon can be run at least on 3 platforms (FreeBSD, NetBSD, Linux).
+    hastmon can be run at least on 3 platforms (FreeBSD, NetBSD, and
+    Linux).
 
   * Bug fixes and small updates.
 
--- Mikolaj Golub <to.my.trociny@gmail.com> 2011/XX/XX
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2011/01/15
 
 hastmon (0.2.0)
 
