@@ -22,17 +22,29 @@ Most of the HASTMON's code was taken from
 and it was developed as a monitoring daemon for HAST cluster but can be
 used for other setups.
 
-This software is being developed and tested under FreeBSD. The work is
-in progress. There should not be serious issues with porting to other
-Unixes, though.
+This software is being developed and tested under FreeBSD. Since 3.0
+it is supposed to work on NetBSD and Linux too.
 
 = Installation. =
 
-To build and install under FreeBSD:
+Since version 0.3.0 when support for several platforms was added
+hastmon requires 
+[http://sourceforge.net/projects/mk-configure/ mk-configure]
+to be built and installed. mk-configure uses 
+[http://www.crufty.net/help/sjg/bmake.html bmake] (NetBSD make).
+
+mk-configure and bmake have been already packaged on some platforms
+(FreeBSD, NetBSD, some Linux distros) but if it is not your case go to
+[http://sourceforge.net/projects/mk-configure/ mk-configure page],
+download the sources and read instructions how to install.
+
+When mk-configure is installed hastmon can be built and installed
+running the following commands:
 
 {{{
-make
-make install
+cd <path to hastmon sources>
+mkcmake
+mkcmake install
 }}}
 
 = Configuration. =
@@ -217,7 +229,7 @@ start()
 	fi
 	logger -p local0.debug -t "${progname}[$$]" "ZFS {$FS} mounted."
     fi
-
+ 
     "${IFCONFIG}" "${IF}" alias "${IP}" netmask 0xffffffff
 
     out=`"${MOUNTD}" onerestart 2>&1`
