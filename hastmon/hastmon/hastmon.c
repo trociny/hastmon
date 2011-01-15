@@ -942,6 +942,13 @@ main(int argc, char *argv[])
 	cfg = yy_config_parse(cfgpath, true);
 	assert(cfg != NULL);
 
+ 	/*
+	 * Restore default actions for interesting signals in case parent
+	 * process (like init(8)) decided to ignore some of them (like SIGHUP).
+	 */
+	PJDLOG_VERIFY(signal(SIGHUP, SIG_DFL) != SIG_ERR);
+	PJDLOG_VERIFY(signal(SIGINT, SIG_DFL) != SIG_ERR);
+	PJDLOG_VERIFY(signal(SIGTERM, SIG_DFL) != SIG_ERR);
 	/*
 	 * Because SIGCHLD is ignored by default, setup dummy handler for it,
 	 * so we can mask it.
