@@ -1,0 +1,13 @@
+PREFIX?=	/usr/local
+
+SYSTEM!=        uname -s
+
+.if "${SYSTEM}" == "FreeBSD"
+FILES=	hastmon
+
+FILESDIR=	${PREFIX}/etc/rc.d
+FILESMODE=	${BINMODE}
+.endif
+
+.include <mkc.own.mk>
+.include <mkc.prog.mk>
