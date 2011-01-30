@@ -105,7 +105,7 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 	sigset_t mask;
 	pthread_t td;
 	pid_t pid;
-	int error;
+	int error, mode;
 
 	res = remote->r_res;
 
@@ -145,16 +145,24 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 		remote->r_out = NULL;
 		/* Declare that we are receiver. */
 		proto_recv(res->hr_event, NULL, 0);
+		/* Declare that we are sender. */
+		proto_send(res->hr_ctrl, NULL, 0);
 		res->hr_workerpid = pid;
 		return;
 	}
 
 	gres = res;
+	mode = pjdlog_mode_get();
 
-	(void)pidfile_close(pfh);
-	hook_fini();
-
-#if defined(HAVE_FUNC1_SETPROCTITLE_UNISTD_H) || \
+	/* Declare that we are sender. */
+	proto_send(res->hr_event, NULL, 0);
+	/* Declare that we are receiver. */
+	proto_recv(res->hr_ctrl, NULL, 0);
+	descriptors_cleanup(res);
+ 
+	pjdlog_init(mode);
+	pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));
+#if defined(HAVE_FUNC1_SETPROCTITLE_UNISTD_H) ||     \
 	defined(HAVE_FUNC1_SETPROCTITLE_STDLIB_H) || \
 	defined(HAVE_FUNC1_SETPROCTITLE_SETPROCTITLE_H)
 	setproctitle("%s (secondary)", res->hr_name);
@@ -165,9 +173,6 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 
 	synch_mtx_init(&exit_lock);
 	synch_mtx_init(&res->hr_lock);
-
-	/* Declare that we are sender. */
-	proto_send(res->hr_event, NULL, 0);
 
 	/* Error in setting timeout is not critical, but why should it fail? */
 	if (proto_timeout(remote->r_in, 0) < 0)
