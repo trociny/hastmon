@@ -81,18 +81,21 @@ void
 descriptors_cleanup(struct hast_resource *res)
 {
 	struct hast_resource *tres;
+	struct hast_remote *remote;
 
 	TAILQ_FOREACH(tres, &cfg->hc_resources, hr_next) {
-		if (tres == res) {
-			PJDLOG_VERIFY(res->hr_role == HAST_ROLE_SECONDARY ||
-			    (res->hr_remotein == NULL &&
-			     res->hr_remoteout == NULL));
-			continue;
+		TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
+		    if (tres == res) {
+			    PJDLOG_VERIFY(res->hr_role == HAST_ROLE_SECONDARY ||
+				(remote->r_in == NULL &&
+				    remote->r_out == NULL));
+			    continue;
+		    }
+		    if (remote->r_in != NULL)
+			    proto_close(remote->r_in);
+		    if (remote->r_out != NULL)
+			    proto_close(remote->r_out);
 		}
-		if (tres->hr_remotein != NULL)
-			proto_close(tres->hr_remotein);
-		if (tres->hr_remoteout != NULL)
-			proto_close(tres->hr_remoteout);
 	}
 	if (cfg->hc_controlin != NULL)
 		proto_close(cfg->hc_controlin);
