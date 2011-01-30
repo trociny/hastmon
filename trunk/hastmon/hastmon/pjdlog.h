@@ -43,6 +43,9 @@
 #define	PJDLOG_MODE_STD		0
 #define	PJDLOG_MODE_SYSLOG	1
 
+void pjdlog_init(int mode);
+void pjdlog_fini(void);
+
 void pjdlog_mode_set(int mode);
 int pjdlog_mode_get(void);
 
