@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,9 +41,36 @@
 
 #include "pjdlog.h"
 
+static bool pjdlog_initialized = false;
 static int pjdlog_mode = PJDLOG_MODE_STD;
 static int pjdlog_debug_level = 0;
 static char pjdlog_prefix[128];
+
+void
+pjdlog_init(int mode)
+{
+
+	assert(!pjdlog_initialized);
+	assert(mode == PJDLOG_MODE_STD || mode == PJDLOG_MODE_SYSLOG);
+
+	if (mode == PJDLOG_MODE_SYSLOG)
+		openlog(NULL, LOG_PID | LOG_NDELAY, LOG_DAEMON);
+	pjdlog_mode = mode;
+
+	pjdlog_initialized = true;
+}
+
+void
+pjdlog_fini(void)
+{
+
+	assert(pjdlog_initialized);
+
+	if (pjdlog_mode == PJDLOG_MODE_SYSLOG)
+		closelog();
+
+	pjdlog_initialized = false;
+}
 
 /*
  * Configure where the logs should go.
@@ -54,12 +82,19 @@ void
 pjdlog_mode_set(int mode)
 {
 
+	assert(pjdlog_initialized);
 	assert(mode == PJDLOG_MODE_STD || mode == PJDLOG_MODE_SYSLOG);
 
 	pjdlog_mode = mode;
+	if (pjdlog_mode == mode)
+		return;
 
 	if (mode == PJDLOG_MODE_SYSLOG)
 		openlog (NULL, LOG_PID | LOG_NDELAY, LOG_DAEMON);
+	else /* if (mode == PJDLOG_MODE_STD) */
+		closelog();
+
+	pjdlog_mode = mode;
 }
 
 /*
@@ -68,6 +103,8 @@ pjdlog_mode_set(int mode)
 int
 pjdlog_mode_get(void)
 {
+
+	assert(pjdlog_initialized);
 
 	return (pjdlog_mode);
 }
@@ -80,6 +117,7 @@ void
 pjdlog_debug_set(int level)
 {
 
+	assert(pjdlog_initialized);
 	assert(level >= 0);
 
 	pjdlog_debug_level = level;
@@ -93,6 +131,8 @@ int
 pjdlog_debug_get(void)
 {
 
+	assert(pjdlog_initialized);
+
 	return (pjdlog_debug_level);
 }
 
@@ -104,6 +144,8 @@ void
 pjdlog_prefix_set(const char *fmt, ...)
 {
 	va_list ap;
+
+	assert(pjdlog_initialized);
 
 	va_start(ap, fmt);
 	pjdlogv_prefix_set(fmt, ap);
@@ -118,6 +160,7 @@ void
 pjdlogv_prefix_set(const char *fmt, va_list ap)
 {
 
+	assert(pjdlog_initialized);
 	assert(fmt != NULL);
 
 	vsnprintf(pjdlog_prefix, sizeof(pjdlog_prefix), fmt, ap);
@@ -160,6 +203,8 @@ pjdlog_common(int loglevel, int debuglevel, int error, const char *fmt, ...)
 {
 	va_list ap;
 
+	assert(pjdlog_initialized);
+
 	va_start(ap, fmt);
 	pjdlogv_common(loglevel, debuglevel, error, fmt, ap);
 	va_end(ap);
@@ -174,6 +219,7 @@ pjdlogv_common(int loglevel, int debuglevel, int error, const char *fmt,
     va_list ap)
 {
 
+	assert(pjdlog_initialized);
 	assert(loglevel == LOG_EMERG || loglevel == LOG_ALERT ||
 	    loglevel == LOG_CRIT || loglevel == LOG_ERR ||
 	    loglevel == LOG_WARNING || loglevel == LOG_NOTICE ||
@@ -250,6 +296,8 @@ void
 pjdlogv(int loglevel, const char *fmt, va_list ap)
 {
 
+	assert(pjdlog_initialized);
+
 	/* LOG_DEBUG is invalid here, pjdlogv?_debug() should be used. */
 	assert(loglevel == LOG_EMERG || loglevel == LOG_ALERT ||
 	    loglevel == LOG_CRIT || loglevel == LOG_ERR ||
@@ -267,6 +315,8 @@ pjdlog(int loglevel, const char *fmt, ...)
 {
 	va_list ap;
 
+	assert(pjdlog_initialized);
+
 	va_start(ap, fmt);
 	pjdlogv(loglevel, fmt, ap);
 	va_end(ap);
@@ -279,6 +329,8 @@ void
 pjdlogv_debug(int debuglevel, const char *fmt, va_list ap)
 {
 
+	assert(pjdlog_initialized);
+
 	pjdlogv_common(LOG_DEBUG, debuglevel, -1, fmt, ap);
 }
 
@@ -289,6 +341,8 @@ void
 pjdlog_debug(int debuglevel, const char *fmt, ...)
 {
 	va_list ap;
+
+	assert(pjdlog_initialized);
 
 	va_start(ap, fmt);
 	pjdlogv_debug(debuglevel, fmt, ap);
@@ -302,6 +356,8 @@ void
 pjdlogv_errno(int loglevel, const char *fmt, va_list ap)
 {
 
+	assert(pjdlog_initialized);
+
 	pjdlogv_common(loglevel, 0, errno, fmt, ap);
 }
 
@@ -312,6 +368,8 @@ void
 pjdlog_errno(int loglevel, const char *fmt, ...)
 {
 	va_list ap;
+
+	assert(pjdlog_initialized);
 
 	va_start(ap, fmt);
 	pjdlogv_errno(loglevel, fmt, ap);
@@ -324,6 +382,8 @@ pjdlog_errno(int loglevel, const char *fmt, ...)
 void
 pjdlogv_exit(int exitcode, const char *fmt, va_list ap)
 {
+
+	assert(pjdlog_initialized);
 
 	pjdlogv_errno(LOG_ERR, fmt, ap);
 	exit(exitcode);
@@ -338,6 +398,8 @@ pjdlog_exit(int exitcode, const char *fmt, ...)
 {
 	va_list ap;
 
+	assert(pjdlog_initialized);
+
 	va_start(ap, fmt);
 	pjdlogv_exit(exitcode, fmt, ap);
 	/* NOTREACHED */
@@ -351,6 +413,8 @@ void
 pjdlogv_exitx(int exitcode, const char *fmt, va_list ap)
 {
 
+	assert(pjdlog_initialized);
+
 	pjdlogv(LOG_ERR, fmt, ap);
 	exit(exitcode);
 	/* NOTREACHED */
@@ -363,6 +427,8 @@ void
 pjdlog_exitx(int exitcode, const char *fmt, ...)
 {
 	va_list ap;
+
+	assert(pjdlog_initialized);
 
 	va_start(ap, fmt);
 	pjdlogv_exitx(exitcode, fmt, ap);
