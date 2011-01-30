@@ -1,7 +1,7 @@
 /*-
  * Copyright (c) 2009-2010 The FreeBSD Foundation
- * Copyright (c) 2010 Pawel Jakub Dawidek <pjd@FreeBSD.org>
- * Copyright (c) 2010 Mikolaj Golub <to.my.trociny@gmail.com>
+ * Copyright (c) 2010-2011 Pawel Jakub Dawidek <pjd@FreeBSD.org>
+ * Copyright (c) 2010-2011 Mikolaj Golub <to.my.trociny@gmail.com>
  * All rights reserved.
  *
  * This software was developed by Mikolaj Golub. The source is derived
@@ -354,8 +354,8 @@ hastmon_reload(void)
 	 * In case of PRIMARY, the worker process will be killed and restarted,
 	 * which also means restarting the resource.
 	 *
-	 * We do just reload (send SIGHUP to worker process) if we act
-	 * as PRIMARY, but only remote address, and timings have
+	 * We do just reload (send SIGHUP to worker process) if we act as
+	 * PRIMARY, but only if remote address, timings or execution path have
 	 * changed. Actually currently PRIMARY will die on SIGHUP too
 	 * but without stopping the resource. We could do "true"
 	 * reload, as hastd does, but do we have to?
@@ -376,6 +376,8 @@ hastmon_reload(void)
 			} else { 
 				pjdlog_info("Resource %s configuration was modified, reloading it.",
 				    cres->hr_name);
+				strlcpy(cres->hr_exec, nres->hr_exec,
+				    sizeof(cres->hr_exec));
 				if (cres->hr_workerpid != 0) {
 					if (kill(cres->hr_workerpid, SIGHUP) < 0) {
 						pjdlog_errno(LOG_WARNING,
