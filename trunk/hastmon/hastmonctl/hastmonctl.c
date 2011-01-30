@@ -243,6 +243,7 @@ main(int argc, char *argv[])
 	if (cmd == CMD_ROLE && argc == 0)
 		usage();
 
+	pjdlog_init(PJDLOG_MODE_STD);
 	pjdlog_debug_set(debug);
 
 	cfg = yy_config_parse(cfgpath, true);
