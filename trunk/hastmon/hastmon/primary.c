@@ -520,6 +520,7 @@ hastmon_primary(struct hast_resource *res)
 	 * Create communication channel between parent and child.
 	 */
 	if (proto_client("socketpair://", &res->hr_ctrl) < 0) {
+		/* TODO: There's no need for this to be fatal error. */
 		KEEP_ERRNO((void)pidfile_remove(pfh));
 		pjdlog_exit(EX_OSERR,
 		    "Unable to create control sockets between parent and child");
@@ -528,6 +529,7 @@ hastmon_primary(struct hast_resource *res)
 	 * Create communication channel between child and parent.
 	 */
 	if (proto_client("socketpair://", &res->hr_event) < 0) {
+		/* TODO: There's no need for this to be fatal error. */
 		KEEP_ERRNO((void)pidfile_remove(pfh));
 		pjdlog_exit(EX_OSERR,
 		    "Unable to create event sockets between child and parent");
@@ -535,6 +537,7 @@ hastmon_primary(struct hast_resource *res)
 
 	pid = fork();
 	if (pid < 0) {
+		/* TODO: There's no need for this to be fatal error. */
 		KEEP_ERRNO((void)pidfile_remove(pfh));
 		pjdlog_exit(EX_TEMPFAIL, "Unable to fork");
 	}
