@@ -281,6 +281,7 @@ control_handle(struct hastmon_config *cfg)
 		return;
 	}
 
+	cfg->hc_controlin = conn;
 	nvin = NULL;
 
 	if (hast_proto_recv_hdr(conn, &nvin) < 0) {
@@ -295,7 +296,7 @@ close:
 	if (nvin != NULL)
 		nv_free(nvin);
 	proto_close(conn);
-
+	cfg->hc_controlin = NULL;
 }
 
 bool
@@ -350,7 +351,7 @@ control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
 	const char *str;
 	uint8_t cmd, role;
 	int error;
-	
+
 	nvout = NULL;
 	role = HAST_ROLE_UNDEF;
 	
