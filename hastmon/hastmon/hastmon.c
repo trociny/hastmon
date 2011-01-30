@@ -77,6 +77,32 @@ usage(void)
 	errx(EX_USAGE, "[-dFh] [-c config] [-P pidfile]");
 }
 
+void
+descriptors_cleanup(struct hast_resource *res)
+{
+	struct hast_resource *tres;
+
+	TAILQ_FOREACH(tres, &cfg->hc_resources, hr_next) {
+		if (tres == res) {
+			PJDLOG_VERIFY(res->hr_role == HAST_ROLE_SECONDARY ||
+			    (res->hr_remotein == NULL &&
+			     res->hr_remoteout == NULL));
+			continue;
+		}
+		if (tres->hr_remotein != NULL)
+			proto_close(tres->hr_remotein);
+		if (tres->hr_remoteout != NULL)
+			proto_close(tres->hr_remoteout);
+	}
+	if (cfg->hc_controlin != NULL)
+		proto_close(cfg->hc_controlin);
+	proto_close(cfg->hc_controlconn);
+	proto_close(cfg->hc_listenconn);
+	(void)pidfile_close(pfh);
+	hook_fini();
+	pjdlog_fini();
+}
+
 static void
 child_exit_log(unsigned int pid, int status)
 {
