@@ -84,7 +84,7 @@ descriptors_cleanup(struct hast_resource *res)
 	struct hast_remote *remote;
 
 	TAILQ_FOREACH(tres, &cfg->hc_resources, hr_next) {
-		TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
+		TAILQ_FOREACH(remote, &tres->hr_remote, r_next) {
 		    if (tres == res) {
 			    PJDLOG_VERIFY(res->hr_role == HAST_ROLE_SECONDARY ||
 				(remote->r_in == NULL &&
