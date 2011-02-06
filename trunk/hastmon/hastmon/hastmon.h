@@ -43,7 +43,9 @@ extern const char *cfgpath;
 extern bool sigexit_received;
 extern struct pidfh *pfh;
 
-void descriptors_cleanup(struct hast_resource *res);
+void descriptors_cleanup(struct hast_resource *res, struct hast_remote *remote);
+void descriptors_assert(const struct hast_resource *res, const struct hast_remote *remote,
+    int pjdlogmode);
 
 void hastmon_primary(struct hast_resource *res);
 void hastmon_watchdog(struct hast_resource *res);

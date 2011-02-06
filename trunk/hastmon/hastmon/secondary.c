@@ -158,8 +158,10 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 	proto_send(res->hr_event, NULL, 0);
 	/* Declare that we are receiver. */
 	proto_recv(res->hr_ctrl, NULL, 0);
-	descriptors_cleanup(res);
- 
+	descriptors_cleanup(res, remote);
+
+	descriptors_assert(res, remote, mode);
+
 	pjdlog_init(mode);
 	pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));
 #if defined(HAVE_FUNC1_SETPROCTITLE_UNISTD_H) ||     \
