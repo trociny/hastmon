@@ -79,9 +79,7 @@ uds_addr(const char *addr, struct sockaddr_un *sunp)
 	    sizeof(sunp->sun_path)) {
 		return (ENAMETOOLONG);
 	}
-#ifndef _NO_SO_LEN
 	sunp->sun_len = SUN_LEN(sunp);
-#endif
 
 	return (0);
 }
@@ -124,7 +122,7 @@ uds_client(const char *addr, void **ctxp)
 }
 
 static int
-uds_connect(void *ctx)
+uds_connect(void *ctx, int timeout)
 {
 	struct uds_ctx *uctx = ctx;
 
@@ -132,11 +130,26 @@ uds_connect(void *ctx)
 	PJDLOG_ASSERT(uctx->uc_magic == UDS_CTX_MAGIC);
 	PJDLOG_ASSERT(uctx->uc_side == UDS_SIDE_CLIENT);
 	PJDLOG_ASSERT(uctx->uc_fd >= 0);
+	PJDLOG_ASSERT(timeout >= -1);
 
 	if (connect(uctx->uc_fd, (struct sockaddr *)&uctx->uc_sun,
 	    sizeof(uctx->uc_sun)) < 0) {
 		return (errno);
 	}
+
+	return (0);
+}
+
+static int
+uds_connect_wait(void *ctx, int timeout)
+{
+	struct uds_ctx *uctx = ctx;
+
+	PJDLOG_ASSERT(uctx != NULL);
+	PJDLOG_ASSERT(uctx->uc_magic == UDS_CTX_MAGIC);
+	PJDLOG_ASSERT(uctx->uc_side == UDS_SIDE_CLIENT);
+	PJDLOG_ASSERT(uctx->uc_fd >= 0);
+	PJDLOG_ASSERT(timeout >= 0);
 
 	return (0);
 }
@@ -203,7 +216,7 @@ uds_accept(void *ctx, void **newctxp)
 }
 
 static int
-uds_send(void *ctx, const unsigned char *data, size_t size)
+uds_send(void *ctx, const unsigned char *data, size_t size, int fd)
 {
 	struct uds_ctx *uctx = ctx;
 
@@ -211,11 +224,11 @@ uds_send(void *ctx, const unsigned char *data, size_t size)
 	PJDLOG_ASSERT(uctx->uc_magic == UDS_CTX_MAGIC);
 	PJDLOG_ASSERT(uctx->uc_fd >= 0);
 
-	return (proto_common_send(uctx->uc_fd, data, size));
+	return (proto_common_send(uctx->uc_fd, data, size, fd));
 }
 
 static int
-uds_recv(void *ctx, unsigned char *data, size_t size)
+uds_recv(void *ctx, unsigned char *data, size_t size, int *fdp)
 {
 	struct uds_ctx *uctx = ctx;
 
@@ -223,33 +236,7 @@ uds_recv(void *ctx, unsigned char *data, size_t size)
 	PJDLOG_ASSERT(uctx->uc_magic == UDS_CTX_MAGIC);
 	PJDLOG_ASSERT(uctx->uc_fd >= 0);
 
-	return (proto_common_recv(uctx->uc_fd, data, size));
-}
-
-static int
-uds_descriptor_send(void *ctx, int fd)
-{
-	struct uds_ctx *uctx = ctx;
-
-	PJDLOG_ASSERT(uctx != NULL);
-	PJDLOG_ASSERT(uctx->uc_magic == UDS_CTX_MAGIC);
-	PJDLOG_ASSERT(uctx->uc_fd >= 0);
-	PJDLOG_ASSERT(fd >= 0);
-
-	return (proto_common_descriptor_send(uctx->uc_fd, fd));
-}
-
-static int
-uds_descriptor_recv(void *ctx, int *fdp)
-{
-	struct uds_ctx *uctx = ctx;
-
-	PJDLOG_ASSERT(uctx != NULL);
-	PJDLOG_ASSERT(uctx->uc_magic == UDS_CTX_MAGIC);
-	PJDLOG_ASSERT(uctx->uc_fd >= 0);
-	PJDLOG_ASSERT(fdp != NULL);
-
-	return (proto_common_descriptor_recv(uctx->uc_fd, fdp));
+	return (proto_common_recv(uctx->uc_fd, data, size, fdp));
 }
 
 static int
@@ -261,14 +248,6 @@ uds_descriptor(const void *ctx)
 	PJDLOG_ASSERT(uctx->uc_magic == UDS_CTX_MAGIC);
 
 	return (uctx->uc_fd);
-}
-
-static bool
-uds_address_match(const void *ctx __unused, const char *addr __unused)
-{
-
-	PJDLOG_ASSERT(!"proto_address_match() not supported on UNIX domain sockets");
-	abort();
 }
 
 static void
@@ -338,14 +317,12 @@ static struct hast_proto uds_proto = {
 	.hp_name = "uds",
 	.hp_client = uds_client,
 	.hp_connect = uds_connect,
+	.hp_connect_wait = uds_connect_wait,
 	.hp_server = uds_server,
 	.hp_accept = uds_accept,
 	.hp_send = uds_send,
 	.hp_recv = uds_recv,
-	.hp_descriptor_send = uds_descriptor_send,
-	.hp_descriptor_recv = uds_descriptor_recv,
 	.hp_descriptor = uds_descriptor,
-	.hp_address_match = uds_address_match,
 	.hp_local_address = uds_local_address,
 	.hp_remote_address = uds_remote_address,
 	.hp_close = uds_close

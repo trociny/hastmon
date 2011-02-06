@@ -505,7 +505,7 @@ remote_send_thread(void *arg)
 			goto close;
 		}
 		/* ...and connect to hastmon. */
-		if (proto_connect(conn) < 0) {
+		if (proto_connect(conn, HAST_TIMEOUT) < 0) {
 			pjdlog_debug(2,
 			    "remote_send[%u]: (%p) Unable to connect to hastmon via %s.",
 			    ncomp, hio, remote->r_addr);
