@@ -374,7 +374,7 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 		    remote->r_addr);
 	}
 	/* Try to connect, but accept failure. */
-	if (proto_connect(out) < 0) {
+	if (proto_connect(out, HAST_TIMEOUT) < 0) {
 		pjdlog_errno(LOG_WARNING, "Unable to connect to %s",
 		    remote->r_addr);
 		goto close;
@@ -448,7 +448,7 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 		    remote->r_addr);
 	}
 	/* Try to connect, but accept failure. */
-	if (proto_connect(in) < 0) {
+	if (proto_connect(in, HAST_TIMEOUT) < 0) {
 		pjdlog_errno(LOG_WARNING, "Unable to connect to %s",
 		    remote->r_addr);
 		goto close;

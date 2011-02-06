@@ -291,7 +291,7 @@ main(int argc, char *argv[])
 		    cfg->hc_controladdr);
 	}
 	/* ...and connect to hastmon. */
-	if (proto_connect(controlconn) < 0) {
+	if (proto_connect(controlconn, HAST_TIMEOUT) < 0) {
 		pjdlog_exit(EX_OSERR, "Unable to connect to hastmon via %s",
 		    cfg->hc_controladdr);
 	}
