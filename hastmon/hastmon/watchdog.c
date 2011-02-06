@@ -35,7 +35,6 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -195,7 +194,7 @@ watchdog_exit(int exitcode, const char *fmt, ...)
 {
 	va_list ap;
 
-	assert(exitcode != EX_OK);
+	PJDLOG_ASSERT(exitcode != EX_OK);
 	synch_mtx_lock(&exit_lock);
 	va_start(ap, fmt);
 	pjdlogv_errno(LOG_ERR, fmt, ap);
@@ -386,7 +385,7 @@ hastmon_watchdog(struct hast_resource *res)
 	 * very begining.
 	 */
 	error = pthread_create(&td, NULL, guard_thread, res);
-	assert(error == 0);
+	PJDLOG_ASSERT(error == 0);
 	/*
 	 * Create the control thread before sending any event to the parent,
 	 * as we can deadlock when parent sends control request to worker,
@@ -396,13 +395,13 @@ hastmon_watchdog(struct hast_resource *res)
 	 * request response.
 	 */
 	error = pthread_create(&td, NULL, ctrl_thread, res);
-	assert(error == 0);
+	PJDLOG_ASSERT(error == 0);
 	TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
 		error = pthread_create(&td, NULL, remote_send_thread, remote);
-		assert(error == 0);
+		PJDLOG_ASSERT(error == 0);
 	}
 	error = pthread_create(&td, NULL, heartbeat_end_thread, res);
-	assert(error == 0);
+	PJDLOG_ASSERT(error == 0);
 	(void)heartbeat_start_thread(res);
 }
 

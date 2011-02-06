@@ -36,7 +36,6 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -197,7 +196,7 @@ primary_exit(int exitcode, const char *fmt, ...)
 {
 	va_list ap;
 
-	assert(exitcode != EX_OK);
+	PJDLOG_ASSERT(exitcode != EX_OK);
 	synch_mtx_lock(&exit_lock);
 	va_start(ap, fmt);
 	pjdlogv_errno(LOG_ERR, fmt, ap);
@@ -363,8 +362,8 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 	const char *errmsg;
 	size_t size;
 
-	assert((inp == NULL && outp == NULL) || (inp != NULL && outp != NULL));
-	assert(real_remote(remote));
+	PJDLOG_ASSERT((inp == NULL && outp == NULL) || (inp != NULL && outp != NULL));
+	PJDLOG_ASSERT(real_remote(remote));
 	
 	in = out = NULL;
 	res = remote->r_res;
@@ -578,7 +577,7 @@ hastmon_primary(struct hast_resource *res)
 	 * very begining.
 	 */
 	error = pthread_create(&td, NULL, guard_thread, res);
-	assert(error == 0);
+	PJDLOG_ASSERT(error == 0);
 	/*
 	 * Create the control thread before sending any event to the parent,
 	 * as we can deadlock when parent sends control request to worker,
@@ -588,17 +587,17 @@ hastmon_primary(struct hast_resource *res)
 	 * request response.
 	 */
 	error = pthread_create(&td, NULL, ctrl_thread, res);
-	assert(error == 0);
+	PJDLOG_ASSERT(error == 0);
 	TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
 		if(real_remote(remote))
 			init_remote(remote, NULL, NULL);
 		error = pthread_create(&td, NULL, remote_send_thread, remote);
-		assert(error == 0);
+		PJDLOG_ASSERT(error == 0);
 		error = pthread_create(&td, NULL, remote_recv_thread, remote);
-		assert(error == 0);
+		PJDLOG_ASSERT(error == 0);
 	}
 	error = pthread_create(&td, NULL, heartbeat_end_thread, res);
-	assert(error == 0);
+	PJDLOG_ASSERT(error == 0);
 	(void)heartbeat_start_thread(res);
 }
 
@@ -629,14 +628,14 @@ remote_close(struct hast_remote *remote, int ncomp)
 	 * another thread can close connection in-between.
 	 */
 	if (!ISCONNECTED(remote, ncomp)) {
-		assert(remote->r_in == NULL);
-		assert(remote->r_out == NULL);
+		PJDLOG_ASSERT(remote->r_in == NULL);
+		PJDLOG_ASSERT(remote->r_out == NULL);
 		synch_rw_unlock(&hio_remote_lock[ncomp]);
 		return;
 	}
 
-	assert(remote->r_in != NULL);
-	assert(remote->r_out != NULL);
+	PJDLOG_ASSERT(remote->r_in != NULL);
+	PJDLOG_ASSERT(remote->r_out != NULL);
 
 	pjdlog_debug(2, "Closing incoming connection to %s.",
 	    remote->r_addr);
@@ -830,7 +829,7 @@ remote_recv_thread(void *arg)
 			 */
 			synch_mtx_lock(&hio_recv_list_lock[ncomp]);
 			hio = TAILQ_FIRST(&hio_recv_list[ncomp]);
-			assert(hio != NULL);
+			PJDLOG_ASSERT(hio != NULL);
 			TAILQ_REMOVE(&hio_recv_list[ncomp], hio,
 			    hio_next[ncomp]);
 			synch_mtx_unlock(&hio_recv_list_lock[ncomp]);
@@ -967,7 +966,7 @@ heartbeat_end_thread(void *arg)
 			case HAST_STATE_STARTING:
 				break;
 			default:
-				assert(!"Wrong state.");
+				PJDLOG_ASSERT(!"Wrong state.");
 			}
 			synch_mtx_unlock(&res->hr_lock);
 		} else {
@@ -1001,16 +1000,16 @@ guard_one(struct hast_remote *remote)
 	}
 
 	if (ISCONNECTED(remote, remote->r_ncomp)) {
-		assert(remote->r_in != NULL);
-		assert(remote->r_out != NULL);
+		PJDLOG_ASSERT(remote->r_in != NULL);
+		PJDLOG_ASSERT(remote->r_out != NULL);
 		synch_rw_unlock(&hio_remote_lock[remote->r_ncomp]);
 		pjdlog_debug(2, "remote_guard: Connection to %s is ok.",
 		    remote->r_addr);
 		return;
 	}
 
-	assert(remote->r_in == NULL);
-	assert(remote->r_out == NULL);
+	PJDLOG_ASSERT(remote->r_in == NULL);
+	PJDLOG_ASSERT(remote->r_out == NULL);
 	/*
 	 * Upgrade the lock. It doesn't have to be atomic as no other thread
 	 * can change connection status from disconnected to connected.
@@ -1021,9 +1020,9 @@ guard_one(struct hast_remote *remote)
 	in = out = NULL;
 	if (init_remote(remote, &in, &out)) {
 		synch_rw_wlock(&hio_remote_lock[remote->r_ncomp]);
-		assert(remote->r_in == NULL);
-		assert(remote->r_out == NULL);
-		assert(in != NULL && out != NULL);
+		PJDLOG_ASSERT(remote->r_in == NULL);
+		PJDLOG_ASSERT(remote->r_out == NULL);
+		PJDLOG_ASSERT(in != NULL && out != NULL);
 		remote->r_in = in;
 		remote->r_out = out;
 		synch_rw_unlock(&hio_remote_lock[remote->r_ncomp]);
@@ -1031,9 +1030,9 @@ guard_one(struct hast_remote *remote)
 		    remote->r_addr);
 	} else {
 		/* Both connections should be NULL. */
-		assert(remote->r_in == NULL);
-		assert(remote->r_out == NULL);
-		assert(in == NULL && out == NULL);
+		PJDLOG_ASSERT(remote->r_in == NULL);
+		PJDLOG_ASSERT(remote->r_out == NULL);
+		PJDLOG_ASSERT(in == NULL && out == NULL);
 		pjdlog_debug(2, "remote_guard: Reconnect to %s failed.",
 		    remote->r_addr);
 	}
