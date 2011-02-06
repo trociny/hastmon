@@ -441,7 +441,7 @@ pjdlog_exitx(int exitcode, const char *fmt, ...)
  * Log assertion and exit.
  */
 void
-pjdlog_verify(const char *func, const char *file, int line,
+pjdlog_abort(const char *func, const char *file, int line,
     const char *failedexpr, const char *fmt, ...)
 {
 	va_list ap;
