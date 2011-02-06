@@ -36,7 +36,6 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -191,10 +190,10 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 	 * request response.
 	 */
 	error = pthread_create(&td, NULL, ctrl_thread, res);
-	assert(error == 0);
+	PJDLOG_ASSERT(error == 0);
 	init_remote(remote, nvin);
 	error = pthread_create(&td, NULL, respond_thread, remote);
-	assert(error == 0);
+	PJDLOG_ASSERT(error == 0);
 	event_send(res, EVENT_CONNECT);	
 	(void)local_check_thread(res);
 }
@@ -229,7 +228,7 @@ secondary_exit(int exitcode, const char *fmt, ...)
 {
 	va_list ap;
 
-	assert(exitcode != EX_OK);
+	PJDLOG_ASSERT(exitcode != EX_OK);
 	synch_mtx_lock(&exit_lock);
 	va_start(ap, fmt);
 	pjdlogv_errno(LOG_ERR, fmt, ap);

@@ -36,7 +36,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <signal.h>
@@ -370,7 +369,7 @@ resource_needs_restart(const struct hast_resource *res0,
     const struct hast_resource *res1)
 {
 
-	assert(strcmp(res0->hr_name, res1->hr_name) == 0);
+	PJDLOG_ASSERT(strcmp(res0->hr_name, res1->hr_name) == 0);
 
 	if (strcmp(res0->hr_exec, res1->hr_exec) != 0)
 		return (true);
@@ -395,8 +394,8 @@ resource_needs_reload(const struct hast_resource *res0,
     const struct hast_resource *res1)
 {
 
-	assert(strcmp(res0->hr_name, res1->hr_name) == 0);
-	assert(strcmp(res0->hr_exec, res1->hr_exec) == 0);
+	PJDLOG_ASSERT(strcmp(res0->hr_name, res1->hr_name) == 0);
+	PJDLOG_ASSERT(strcmp(res0->hr_exec, res1->hr_exec) == 0);
 
 	if (res0->hr_role != HAST_ROLE_PRIMARY)
 		return (false);
@@ -540,7 +539,7 @@ hastmon_reload(void)
 			if (strcmp(cres->hr_name, nres->hr_name) == 0)
 				break;
 		}
-		assert(cres != NULL);
+		PJDLOG_ASSERT(cres != NULL);
 		if ((restart = resource_needs_restart(cres, nres)) ||
 		    resource_needs_reload(cres, nres)) {
 			role = cres->hr_role;
@@ -883,7 +882,7 @@ listen_accept(void)
 	 * (only remotein) we have to cancel it and accept the new connection.
 	 */
 	if (token == NULL) {
-		assert(remote->r_out == NULL);
+		PJDLOG_ASSERT(remote->r_out == NULL);
 		pjdlog_debug(1, "Initial connection from %s.", raddr);
 		if (remote->r_in != NULL) {
 			char oaddr[256];
@@ -1007,29 +1006,29 @@ main_loop(void)
 				hastmon_reload();
 				break;
 			default:
-				assert(!"invalid condition");
+				PJDLOG_ASSERT(!"invalid condition");
 			}
 		}
 		
 		/* Setup descriptors for select(2). */
 		FD_ZERO(&rfds);
 		maxfd = fd = proto_descriptor(cfg->hc_controlconn);
-		assert(fd >= 0);
+		PJDLOG_ASSERT(fd >= 0);
 		FD_SET(fd, &rfds);
 		fd = proto_descriptor(cfg->hc_listenconn);
-		assert(fd >= 0);
+		PJDLOG_ASSERT(fd >= 0);
 		FD_SET(fd, &rfds);
 		maxfd = fd > maxfd ? fd : maxfd;
 		TAILQ_FOREACH(res, &cfg->hc_resources, hr_next) {
 			if (res->hr_event == NULL)
 				continue;
 			fd = proto_descriptor(res->hr_event);
-			assert(fd >= 0);
+			PJDLOG_ASSERT(fd >= 0);
 			FD_SET(fd, &rfds);
 			maxfd = fd > maxfd ? fd : maxfd;
 		}
 
-		assert(maxfd + 1 <= (int)FD_SETSIZE);
+		PJDLOG_ASSERT(maxfd + 1 <= (int)FD_SETSIZE);
 		ret = select(maxfd + 1, &rfds, NULL, NULL, &seltimeout);
 		if (ret == 0)
 			hook_check();
@@ -1119,7 +1118,7 @@ main(int argc, char *argv[])
 	}
 
 	cfg = yy_config_parse(cfgpath, true);
-	assert(cfg != NULL);
+	PJDLOG_ASSERT(cfg != NULL);
 
  	/*
 	 * Restore default actions for interesting signals in case parent

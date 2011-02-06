@@ -31,8 +31,6 @@
 
 #include <sys/cdefs.h>
 
-#include <assert.h>
-
 #include <pjdlog.h>
 
 #include "hast.h"
@@ -90,7 +88,7 @@ complaints_expire(struct hast_resource *res)
 	time_t now;
 	int ii;
 
-	assert(res != NULL);
+	PJDLOG_ASSERT(res != NULL);
 	
 	now = time(NULL);
 	ii = 0;
@@ -136,7 +134,7 @@ int
 complaints_cnt(struct hast_resource *res)
 {
 
-	assert(res != NULL);
+	PJDLOG_ASSERT(res != NULL);
 	
 	return complaints_register(res, -1);
 }
@@ -149,7 +147,7 @@ complaints_clear(struct hast_resource *res)
 {
 	struct hast_complaint *cmpl;
 
-	assert(res != NULL);
+	PJDLOG_ASSERT(res != NULL);
 	
 	while ((cmpl = TAILQ_FIRST(&res->hr_complaints)) != NULL) {
 		TAILQ_REMOVE(&res->hr_complaints, cmpl, c_next);

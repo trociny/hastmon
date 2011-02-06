@@ -34,7 +34,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -231,10 +230,10 @@ tcp4_connect(void *ctx)
 	socklen_t esize;
 	int error, flags, ret;
 
-	assert(tctx != NULL);
-	assert(tctx->tc_magic == TCP4_CTX_MAGIC);
-	assert(tctx->tc_side == TCP4_SIDE_CLIENT);
-	assert(tctx->tc_fd >= 0);
+	PJDLOG_ASSERT(tctx != NULL);
+	PJDLOG_ASSERT(tctx->tc_magic == TCP4_CTX_MAGIC);
+	PJDLOG_ASSERT(tctx->tc_side == TCP4_SIDE_CLIENT);
+	PJDLOG_ASSERT(tctx->tc_fd >= 0);
 
 	flags = fcntl(tctx->tc_fd, F_GETFL);
 	if (flags == -1) {
@@ -283,8 +282,8 @@ again:
 		pjdlog_common(LOG_DEBUG, 1, errno, "select() failed");
 		goto done;
 	}
-	assert(ret > 0);
-	assert(FD_ISSET(tctx->tc_fd, &fdset));
+	PJDLOG_ASSERT(ret > 0);
+	PJDLOG_ASSERT(FD_ISSET(tctx->tc_fd, &fdset));
 	esize = sizeof(error);
 	if (getsockopt(tctx->tc_fd, SOL_SOCKET, SO_ERROR, &error,
 	    &esize) == -1) {
@@ -350,10 +349,10 @@ tcp4_accept(void *ctx, void **newctxp)
 	socklen_t fromlen;
 	int ret;
 
-	assert(tctx != NULL);
-	assert(tctx->tc_magic == TCP4_CTX_MAGIC);
-	assert(tctx->tc_side == TCP4_SIDE_SERVER_LISTEN);
-	assert(tctx->tc_fd >= 0);
+	PJDLOG_ASSERT(tctx != NULL);
+	PJDLOG_ASSERT(tctx->tc_magic == TCP4_CTX_MAGIC);
+	PJDLOG_ASSERT(tctx->tc_side == TCP4_SIDE_SERVER_LISTEN);
+	PJDLOG_ASSERT(tctx->tc_fd >= 0);
 
 	newtctx = malloc(sizeof(*newtctx));
 	if (newtctx == NULL)
@@ -380,9 +379,9 @@ tcp4_send(void *ctx, const unsigned char *data, size_t size)
 {
 	struct tcp4_ctx *tctx = ctx;
 
-	assert(tctx != NULL);
-	assert(tctx->tc_magic == TCP4_CTX_MAGIC);
-	assert(tctx->tc_fd >= 0);
+	PJDLOG_ASSERT(tctx != NULL);
+	PJDLOG_ASSERT(tctx->tc_magic == TCP4_CTX_MAGIC);
+	PJDLOG_ASSERT(tctx->tc_fd >= 0);
 
 	return (proto_common_send(tctx->tc_fd, data, size));
 }
@@ -392,9 +391,9 @@ tcp4_recv(void *ctx, unsigned char *data, size_t size)
 {
 	struct tcp4_ctx *tctx = ctx;
 
-	assert(tctx != NULL);
-	assert(tctx->tc_magic == TCP4_CTX_MAGIC);
-	assert(tctx->tc_fd >= 0);
+	PJDLOG_ASSERT(tctx != NULL);
+	PJDLOG_ASSERT(tctx->tc_magic == TCP4_CTX_MAGIC);
+	PJDLOG_ASSERT(tctx->tc_fd >= 0);
 
 	return (proto_common_recv(tctx->tc_fd, data, size));
 }
@@ -404,8 +403,8 @@ tcp4_descriptor(const void *ctx)
 {
 	const struct tcp4_ctx *tctx = ctx;
 
-	assert(tctx != NULL);
-	assert(tctx->tc_magic == TCP4_CTX_MAGIC);
+	PJDLOG_ASSERT(tctx != NULL);
+	PJDLOG_ASSERT(tctx->tc_magic == TCP4_CTX_MAGIC);
 
 	return (tctx->tc_fd);
 }
@@ -416,8 +415,8 @@ sin2str(struct sockaddr_in *sinp, char *addr, size_t size)
 	in_addr_t ip;
 	unsigned int port;
 
-	assert(addr != NULL);
-	assert(sinp->sin_family == AF_INET);
+	PJDLOG_ASSERT(addr != NULL);
+	PJDLOG_ASSERT(sinp->sin_family == AF_INET);
 
 	ip = ntohl(sinp->sin_addr.s_addr);
 	port = ntohs(sinp->sin_port);
@@ -434,8 +433,8 @@ tcp4_address_match(const void *ctx, const char *addr)
 	socklen_t sinlen;
 	in_addr_t ip1, ip2;
 
-	assert(tctx != NULL);
-	assert(tctx->tc_magic == TCP4_CTX_MAGIC);
+	PJDLOG_ASSERT(tctx != NULL);
+	PJDLOG_ASSERT(tctx->tc_magic == TCP4_CTX_MAGIC);
 
 	if (tcp4_addr(addr, &sin) != 0)
 		return (false);
@@ -456,8 +455,8 @@ tcp4_local_address(const void *ctx, char *addr, size_t size)
 	struct sockaddr_in sin;
 	socklen_t sinlen;
 
-	assert(tctx != NULL);
-	assert(tctx->tc_magic == TCP4_CTX_MAGIC);
+	PJDLOG_ASSERT(tctx != NULL);
+	PJDLOG_ASSERT(tctx->tc_magic == TCP4_CTX_MAGIC);
 
 	sinlen = sizeof(sin);
 	if (getsockname(tctx->tc_fd, (struct sockaddr *)&sin, &sinlen) < 0) {
@@ -474,8 +473,8 @@ tcp4_remote_address(const void *ctx, char *addr, size_t size)
 	struct sockaddr_in sin;
 	socklen_t sinlen;
 
-	assert(tctx != NULL);
-	assert(tctx->tc_magic == TCP4_CTX_MAGIC);
+	PJDLOG_ASSERT(tctx != NULL);
+	PJDLOG_ASSERT(tctx->tc_magic == TCP4_CTX_MAGIC);
 
 	sinlen = sizeof(sin);
 	if (getpeername(tctx->tc_fd, (struct sockaddr *)&sin, &sinlen) < 0) {
@@ -490,8 +489,8 @@ tcp4_close(void *ctx)
 {
 	struct tcp4_ctx *tctx = ctx;
 
-	assert(tctx != NULL);
-	assert(tctx->tc_magic == TCP4_CTX_MAGIC);
+	PJDLOG_ASSERT(tctx != NULL);
+	PJDLOG_ASSERT(tctx->tc_magic == TCP4_CTX_MAGIC);
 
 	if (tctx->tc_fd >= 0)
 		close(tctx->tc_fd);
