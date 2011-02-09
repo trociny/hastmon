@@ -31,6 +31,7 @@
 
 /* UDS - UNIX Domain Socket */
 
+#include <sys/types.h>
 #include <sys/un.h>
 
 #include <errno.h>
@@ -53,6 +54,7 @@ struct uds_ctx {
 #define	UDS_SIDE_CLIENT		0
 #define	UDS_SIDE_SERVER_LISTEN	1
 #define	UDS_SIDE_SERVER_WORK	2
+	pid_t			uc_owner;
 };
 
 static void uds_close(void *ctx);
@@ -108,6 +110,7 @@ uds_common_setup(const char *addr, void **ctxp, int side)
 	}
 
 	uctx->uc_side = side;
+	uctx->uc_owner = 0;
 	uctx->uc_magic = UDS_CTX_MAGIC;
 	*ctxp = uctx;
 
@@ -166,13 +169,14 @@ uds_server(const char *addr, void **ctxp)
 
 	uctx = *ctxp;
 
-	unlink(uctx->uc_sun.sun_path);
+	(void)unlink(uctx->uc_sun.sun_path);
 	if (bind(uctx->uc_fd, (struct sockaddr *)&uctx->uc_sun,
 	    sizeof(uctx->uc_sun)) < 0) {
 		ret = errno;
 		uds_close(uctx);
 		return (ret);
 	}
+	uctx->uc_owner = getpid();
 	if (listen(uctx->uc_fd, 8) < 0) {
 		ret = errno;
 		uds_close(uctx);
@@ -199,9 +203,9 @@ uds_accept(void *ctx, void **newctxp)
 	if (newuctx == NULL)
 		return (errno);
 
-	fromlen = sizeof(uctx->uc_sun);
-	newuctx->uc_fd = accept(uctx->uc_fd, (struct sockaddr *)&uctx->uc_sun,
-	    &fromlen);
+	fromlen = sizeof(newuctx->uc_sun);
+	newuctx->uc_fd = accept(uctx->uc_fd,
+	    (struct sockaddr *)&newuctx->uc_sun, &fromlen);
 	if (newuctx->uc_fd < 0) {
 		ret = errno;
 		free(newuctx);
@@ -308,7 +312,20 @@ uds_close(void *ctx)
 
 	if (uctx->uc_fd >= 0)
 		close(uctx->uc_fd);
-	unlink(uctx->uc_sun.sun_path);
+	/*
+	 * Unlink the socket only if we are the owner and this is descriptor
+	 * we listen on.
+	 */
+	if (uctx->uc_side == UDS_SIDE_SERVER_LISTEN &&
+	    uctx->uc_owner == getpid()) {
+		PJDLOG_ASSERT(uctx->uc_sun.sun_path[0] != '\0');
+		if (unlink(uctx->uc_sun.sun_path) == -1) {
+			pjdlog_errno(LOG_WARNING,
+			    "Unable to unlink socket file %s",
+			    uctx->uc_sun.sun_path);
+		}
+	}
+	uctx->uc_owner = 0;
 	uctx->uc_magic = 0;
 	free(uctx);
 }
