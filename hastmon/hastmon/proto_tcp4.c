@@ -133,7 +133,9 @@ tcp4_addr(const char *addr, struct sockaddr_in *sinp)
 	}
 
 	sinp->sin_family = AF_INET;
+#ifndef _NO_SO_LEN
 	sinp->sin_len = sizeof(*sinp);
+#endif
 	/* Extract optional port. */
 	pp = strrchr(addr, ':');
 	if (pp == NULL) {

@@ -81,8 +81,9 @@ uds_addr(const char *addr, struct sockaddr_un *sunp)
 	    sizeof(sunp->sun_path)) {
 		return (ENAMETOOLONG);
 	}
+#ifndef _NO_SO_LEN
 	sunp->sun_len = SUN_LEN(sunp);
-
+#endif
 	return (0);
 }
 
