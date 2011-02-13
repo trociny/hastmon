@@ -564,11 +564,7 @@ hastmon_primary(struct hast_resource *res)
 
 	pjdlog_init(mode);
 	pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));
-#if defined(HAVE_FUNC1_SETPROCTITLE_UNISTD_H) || \
-	defined(HAVE_FUNC1_SETPROCTITLE_STDLIB_H) || \
-	defined(HAVE_FUNC1_SETPROCTITLE_SETPROCTITLE_H)
 	setproctitle("%s (primary)", res->hr_name);
-#endif
 
 	init_local(res);
 	init_environment(res);

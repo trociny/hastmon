@@ -1066,8 +1066,13 @@ dummy_sighandler(int sig __unused)
 	/* Nothing to do. */
 }
 
+#ifdef _SETPROCTITLE_USES_ENV
+char **hast_environ;
+char **hast_argv;
+#endif
+
 int
-main(int argc, char *argv[])
+main(int argc, char *argv[], char *environ[])
 {
 	const char *pidfile;
 	pid_t otherpid;
@@ -1075,6 +1080,12 @@ main(int argc, char *argv[])
 	int debuglevel;
 	sigset_t mask;
 
+#ifdef _SETPROCTITLE_USES_ENV
+	hast_argv = argv;
+	hast_environ = environ;
+	if (init_setproctitle() != 0)
+		pjdlog_exit(EX_OSERR, "Unable to init setproctitle.");
+#endif
 	foreground = false;
 	debuglevel = 0;
 	pidfile = HAST_PIDFILE;

@@ -163,11 +163,7 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 
 	pjdlog_init(mode);
 	pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));
-#if defined(HAVE_FUNC1_SETPROCTITLE_UNISTD_H) ||     \
-	defined(HAVE_FUNC1_SETPROCTITLE_STDLIB_H) || \
-	defined(HAVE_FUNC1_SETPROCTITLE_SETPROCTITLE_H)
 	setproctitle("%s (secondary)", res->hr_name);
-#endif
 
 	PJDLOG_VERIFY(sigemptyset(&mask) == 0);
 	PJDLOG_VERIFY(sigprocmask(SIG_SETMASK, &mask, NULL) == 0);
