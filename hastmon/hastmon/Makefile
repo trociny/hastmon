@@ -1,6 +1,6 @@
 PREFIX?=	/usr/local
 
-MKC_COMMON_DEFINES.Linux+=	-D_NO_SO_LEN
+MKC_COMMON_DEFINES.Linux+=	-D_NO_SO_LEN -D_SETPROCTITLE_USES_ENV
 MKC_COMMON_DEFINES.FreeBSD+=	-D_KERN_HOSTUUID -D_HAVE_SYS_REFCOUNT_H=1
 
 MKC_CHECK_HEADERS+=	pthread_np.h
@@ -20,6 +20,7 @@ MKC_CHECK_FUNCS3+=	strlcat:string.h strlcpy:string.h
 MKC_SOURCE_FUNCLIBS+=	strlcat strlcpy
 
 MKC_CHECK_FUNCS1+=	setproctitle:unistd.h setproctitle:stdlib.h setproctitle:setproctitle.h
+MKC_SOURCE_FUNCLIBS+=	setproctitle
 
 MKC_CHECK_FUNCS1+=	closefrom:unistd.h
 

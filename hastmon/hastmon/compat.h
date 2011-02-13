@@ -120,4 +120,13 @@ size_t strlcat(char *dst, const char *src, size_t size);
 size_t strlcpy(char *dst, const char *src, size_t size);
 #endif
 
+#if !defined(HAVE_FUNC1_SETPROCTITLE_UNISTD_H) && \
+	!defined(HAVE_FUNC1_SETPROCTITLE_STDLIB_H) && \
+	!defined(HAVE_FUNC1_SETPROCTITLE_SETPROCTITLE_H)
+#ifdef _SETPROCTITLE_USES_ENV
+int init_setproctitle(void);
+#endif
+void setproctitle(const char *fmt, ...);
+#endif
+
 #endif /* !_COMPAT_H_ */
