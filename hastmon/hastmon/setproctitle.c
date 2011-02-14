@@ -48,8 +48,8 @@
 
 #ifdef _SETPROCTITLE_USES_ENV
 
-extern char **hast_environ;
 extern char **hast_argv;
+extern char **environ;
 
 static char *hast_argv_last;
 
@@ -62,8 +62,8 @@ init_setproctitle(void)
 
     size = 0;
 
-    for (i = 0; hast_environ[i]; i++) {
-	    size += strlen(hast_environ[i]) + 1;
+    for (i = 0; environ[i]; i++) {
+	    size += strlen(environ[i]) + 1;
     }
 
     p = malloc(size);
@@ -79,14 +79,14 @@ init_setproctitle(void)
         }
     }
 
-    for (i = 0; hast_environ[i] != NULL; i++) {
-        if (hast_argv_last == hast_environ[i]) {
+    for (i = 0; environ[i] != NULL; i++) {
+        if (hast_argv_last == environ[i]) {
 
-            size = strlen(hast_environ[i]) + 1;
-            hast_argv_last = hast_environ[i] + size;
+            size = strlen(environ[i]) + 1;
+            hast_argv_last = environ[i] + size;
 
-            strncpy(p, (u_char *) hast_environ[i], size);
-            hast_environ[i] = (char *) p;
+            strncpy(p, (u_char *) environ[i], size);
+            environ[i] = (char *) p;
             p += size;
         }
     }
