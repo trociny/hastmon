@@ -73,6 +73,7 @@ static int depth0_attempts;
 static int depth0_heartbeat_interval;
 static int depth0_complaint_count;
 static int depth0_complaint_interval;
+static int depth0_role_on_start;
 static struct hast_auth depth0_key;
 
 extern void yyrestart(FILE *);
@@ -176,9 +177,10 @@ yy_config_parse(const char *config, bool exitonerror)
 	lineno = 0;
 
 	depth0_timeout = HAST_TIMEOUT;
-	depth0_heartbeat_interval = HAST_HBEAT_INT;	
+	depth0_heartbeat_interval = HAST_HBEAT_INT;
 	depth0_complaint_count = HAST_CMPLNT_CNT;
-	depth0_complaint_interval = HAST_CMPLNT_INT;	
+	depth0_complaint_interval = HAST_CMPLNT_INT;
+	depth0_role_on_start = HAST_ROLE_INIT;
 	strlcpy(depth0_control, HAST_CONTROL, sizeof(depth0_control));
 	strlcpy(depth0_listen, HAST_LISTEN, sizeof(depth0_listen));
 	depth0_exec[0] = '\0';
@@ -264,6 +266,13 @@ yy_config_parse(const char *config, bool exitonerror)
 			 */
 			curres->hr_complaint_interval = depth0_complaint_interval;
 		}
+		if (curres->hr_role_on_start == -1) {
+			/*
+			 * Role on start is not set at resource-level.
+			 * Use global or default setting.
+			 */
+			curres->hr_role_on_start = depth0_role_on_start;
+		}
 		if (curres->hr_exec[0] == '\0') {
 			/*
 			 * Exec is not set at resource-level.
@@ -313,8 +322,11 @@ yy_config_free(struct hastmon_config *config)
 %}
 
 %token ALGORITHM ATTEMPTS CB COMPLAINT_COUNT COMPLAINT_INTERVAL CONTROL EXEC
-%token FRIENDS HEARTBEAT_INTERVAL KEY LISTEN NUM ON OB PORT PRIORITY 
-%token REMOTE RESOURCE SECRET STR TIMEOUT
+%token FRIENDS HEARTBEAT_INTERVAL KEY LISTEN NUM ON OB PORT PRIORITY
+%token REMOTE RESOURCE ROLE_ON_START SECRET STR TIMEOUT
+%token INIT PRIMARY SECONDARY WATCHDOG
+
+%type <num> role
 
 %union
 {
@@ -350,6 +362,8 @@ statement:
 	complaint_count_statement
 	|
 	complaint_interval_statement
+	|
+	role_on_start_statement
 	|
 	exec_statement
 	|
@@ -502,6 +516,33 @@ complaint_interval_statement:	COMPLAINT_INTERVAL NUM
 	}
 	;
 
+role_on_start_statement:	ROLE_ON_START role
+	{
+		switch (depth) {
+		case 0:
+			depth0_role_on_start = $2;
+			break;
+		case 1:
+		case 2:
+			if (curres != NULL)
+				curres->hr_role_on_start = $2;
+			break;
+		default:
+			assert(!"role_on_start at wrong depth level");
+		}
+	}
+	;
+
+role:
+	INIT		{ $$ = HAST_ROLE_INIT; }
+	|
+	PRIMARY		{ $$ = HAST_ROLE_PRIMARY; }
+	|
+	SECONDARY	{ $$ = HAST_ROLE_SECONDARY; }
+	|
+	WATCHDOG	{ $$ = HAST_ROLE_WATCHDOG; }
+	;
+
 exec_statement:		EXEC STR
 	{
 		switch (depth) {
@@ -576,6 +617,8 @@ node_entry:
 	complaint_count_statement
 	|
 	complaint_interval_statement
+	|
+	role_on_start_statement
 	;
 
 key_statement:		KEY OB key_entries CB
@@ -678,7 +721,7 @@ resource_statement:	RESOURCE resource_start OB resource_entries CB
 				    curres->hr_name);
 				return (1);
 			}
-			
+
 			/*
 			 *  Exec has to be configured at this point.
 			 */
@@ -687,7 +730,7 @@ resource_statement:	RESOURCE resource_start OB resource_entries CB
 				    curres->hr_name);
 				return (1);
 			}
-			
+
 			/* Put it onto resource list. */
 			TAILQ_INSERT_TAIL(&lconfig->hc_resources, curres, hr_next);
 			curres = NULL;
@@ -729,6 +772,7 @@ resource_start:	STR
 		free($1);
 		curres->hr_role = HAST_ROLE_INIT;
 		curres->hr_previous_role = HAST_ROLE_INIT;
+		curres->hr_role_on_start = -1;
 		curres->hr_timeout = -1;
 		curres->hr_priority = 100;
 		curres->hr_heartbeat_interval = -1;
@@ -764,6 +808,8 @@ resource_entry:
 	complaint_count_statement
 	|
 	complaint_interval_statement
+	|
+	role_on_start_statement
 	|
 	exec_statement
 	|
@@ -815,6 +861,8 @@ resource_node_entry:
 	complaint_count_statement
 	|
 	complaint_interval_statement
+	|
+	role_on_start_statement
 	;
 
 remote_statement:	REMOTE remote_addresses
@@ -903,7 +951,7 @@ friend_address:		STR
 			}
 			break;
 		default:
-			assert(!"friends at wrong depth level");			
+			assert(!"friends at wrong depth level");
 		}
 	}
 	;

@@ -61,6 +61,11 @@ secret			{ DP; return SECRET; }
 complaint_count		{ DP; return COMPLAINT_COUNT; }
 complaint_interval	{ DP; return COMPLAINT_INTERVAL; }
 on			{ DP; return ON; }
+role_on_start		{ DP; return ROLE_ON_START; }
+init			{ DP; return INIT; }
+primary			{ DP; return PRIMARY; }
+secondary		{ DP; return SECONDARY; }
+watchdog		{ DP; return WATCHDOG; }
 [0-9]+			{ DP; yylval.num = atoi(yytext); return NUM; }
 [a-zA-Z0-9\.\-_/\:]+	{ DP; yylval.str = strdup(yytext); return STR; }
 \{			{ DP; depth++; return OB; }

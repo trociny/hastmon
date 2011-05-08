@@ -61,7 +61,7 @@ child_cleanup(struct hast_resource *res)
 
 	/* We don't want send event status to dead worker.*/
 	hook_invalidate_callers(res);
-	
+
 	proto_close(res->hr_ctrl);
 	res->hr_ctrl = NULL;
 	if (res->hr_event != NULL) {
@@ -194,7 +194,7 @@ control_status_worker(struct hast_resource *res, struct nv *nvout,
 				    remote->r_ncomp);
 				goto end;
 			}
-			nv_add_string(nvout, str, "remoterole%u.%u", no, remote->r_ncomp);			
+			nv_add_string(nvout, str, "remoterole%u.%u", no, remote->r_ncomp);
 		}
 	}
 	nv_add_uint8(nvout, nv_get_uint8(cnvin, "state"), "state%u", no);
@@ -306,23 +306,23 @@ control_auth_confirm(struct hastmon_config *cfg, struct nv *nv,
 	struct hast_resource *res;
 	const char *name;
 	unsigned int ii;
-	
+
 	assert(cfg != NULL);
 	assert(nv != NULL);
 	assert(conn != NULL);
 	assert(str != NULL);
-	
+
 	if (strcmp(str, "all") == 0) {
-		
+
 		/* All configured resources. */
-		
+
 		TAILQ_FOREACH(res, &cfg->hc_resources, hr_next) {
 			if (!auth_confirm(nv, conn, &res->hr_key))
 				return false;
 		}
 	} else {
 		/* Only selected resources. */
-		
+
 		for (ii = 0; ; ii++) {
 			name = nv_get_string(nv, "resource%u", ii);
 			if (name == NULL)
@@ -354,7 +354,7 @@ control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
 
 	nvout = NULL;
 	role = HAST_ROLE_UNDEF;
-	
+
 	/* Obtain command code. 0 means that nv_get_uint8() failed. */
 	cmd = nv_get_uint8(nvin, "cmd");
 	if (cmd == 0) {
@@ -382,7 +382,7 @@ control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
 		pjdlog_error("Authentication failed.");
 		error = EHAST_AUTHFAILED;
 		goto close;
-	}	
+	}
 	if (cmd == HASTCTL_SET_ROLE) {
 		role = nv_get_uint8(nvin, "role");
 		switch (role) {
@@ -482,7 +482,7 @@ control_send_event_status(struct hast_resource *res, int event, int status)
 	cnvout = nv_alloc();
 	nv_add_uint8(cnvout, HASTCTL_EVENT_STATUS, "cmd");
 	nv_add_uint8(cnvout, (uint8_t)event, "event");
-	nv_add_uint8(cnvout, (uint8_t)status, "status");	
+	nv_add_uint8(cnvout, (uint8_t)status, "status");
 	error = nv_error(cnvout);
 	if (error != 0) {
 		pjdlog_common(LOG_ERR, 0, error,
@@ -570,7 +570,7 @@ ctrl_thread(void *arg)
 			event = nv_get_uint8(nvin, "event");
 			status = nv_get_uint8(nvin, "status");
 			switch (event) {
-			case EVENT_STATUS:				
+			case EVENT_STATUS:
 				pjdlog_debug(2,"ctrl_thread: status event received with status %u.",
 				    (unsigned int)status);
 				synch_mtx_lock(&res->hr_lock);

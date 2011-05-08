@@ -63,12 +63,12 @@ heartbeat_interval <seconds>
 complaint_count <number>
 complaint_interval <seconds>
 exec <path>
+role_on_start <role>
 
 key {
         algorithm <name>
         secret <string>
 }
-
 
 on <node> {
 	# Node section
@@ -79,6 +79,7 @@ on <node> {
         heartbeat_interval <seconds>
         complaint_count <number>
         complaint_interval <seconds>
+        role_on_start <role>
 }
 
 on <node> {
@@ -90,6 +91,7 @@ on <node> {
 	heartbeat_interval <seconds>
         complaint_count <number>
         complaint_interval <seconds>
+        role_on_start <role>
 }
 
 resource <name> {
@@ -101,6 +103,7 @@ resource <name> {
 	heartbeat_interval <seconds>
 	complaint_count <number>
 	complaint_interval <seconds>
+        role_on_start <role>
 
 	key {
 		algorithm <name>
@@ -118,6 +121,7 @@ resource <name> {
                 heartbeat_interval <seconds>
                 complaint_count <number>
                 complaint_interval <seconds>
+                role_on_start <role>
 	}
 	on <node> {
 		# Resource-node section
@@ -130,6 +134,7 @@ resource <name> {
                 heartbeat_interval <seconds>
                 complaint_count <number>
                 complaint_interval <seconds>
+                role_on_start <role>
 	}
 }
 .Ed
@@ -243,7 +248,8 @@ argument is previous resource role (before the change).
 It can be one of:
 .Ar init ,
 .Ar secondary ,
-.Ar primary .
+.Ar primary ,
+.Ar watchdog .
 .Pp
 The
 .Aq newrole
@@ -251,7 +257,8 @@ argument is current resource role (after the change).
 It can be one of:
 .Ar init ,
 .Ar secondary ,
-.Ar primary .
+.Ar primary ,
+.Ar watchdog .
 .Pp
 .It Ic friends Aq addr ...
 .Pp
@@ -328,6 +335,19 @@ check resource status on the nodes and send complaints.
 + .Va none
 + can be used when the remote address is not yet known (eg. the other node is not
 + set up yet).
+
+.It Ic role_on_start Aq role
+.Pp
+Role a resource should be set on
+.Nm hastmon
+start.
+It can be one of:
+.Ar init ,
+.Ar secondary ,
+.Ar primary ,
+.Ar watchdog .
+The default role is
+.Ar init .
 .It Ic timeout Aq seconds
 .Pp
 Connection timeout in seconds.

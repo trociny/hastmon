@@ -138,8 +138,10 @@ struct hast_resource {
 
 	/* Resource role: HAST_ROLE_{INIT,PRIMARY,SECONDARY,WATCHDOG}. */
 	int	hr_role;
-	/* Previous resource role: HAST_ROLE_{INIT,PRIMARY,SECONDARY}. */
+	/* Previous resource role: HAST_ROLE_{INIT,PRIMARY,SECONDARY,WATCHDOG}. */
 	int	hr_previous_role;
+	/* Resource role on start: HAST_ROLE_{INIT,PRIMARY,SECONDARY,WATCHDOG}. */
+	int	hr_role_on_start;
 	/* PID of child worker process. 0 - no child. */
 	pid_t	hr_workerpid;
 	/* Control connection between parent and child. */
@@ -160,7 +162,7 @@ struct hast_resource {
 
 	/* Key used for authentication. */
 	struct hast_auth hr_key;
-	
+
 	/* Number of remote components. */
 	int hr_remote_cnt;
 
@@ -176,11 +178,11 @@ struct hast_resource {
 	int	hr_heartbeat_interval;
 
 	/* Complaints. */
-	TAILQ_HEAD(, hast_complaint) hr_complaints;	
-	
+	TAILQ_HEAD(, hast_complaint) hr_complaints;
+
 	/* Locked used to synchronize access to resourse. */
 	pthread_mutex_t hr_lock;
-	
+
 	/* Next resource. */
 	TAILQ_ENTRY(hast_resource) hr_next;
 };
