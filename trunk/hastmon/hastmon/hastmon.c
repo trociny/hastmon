@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <signal.h>
@@ -114,20 +115,20 @@ dtype2str(mode_t mode)
 
 	if (S_ISBLK(mode))
 		return ("block device");
-	else if (S_ISCHR(mode)) 
+	else if (S_ISCHR(mode))
 		return ("character device");
-	else if (S_ISDIR(mode)) 
+	else if (S_ISDIR(mode))
 		return ("directory");
 	else if (S_ISFIFO(mode))
 		return ("pipe or FIFO");
-	else if (S_ISLNK(mode)) 
+	else if (S_ISLNK(mode))
 		return ("symbolic link");
-	else if (S_ISREG(mode)) 
+	else if (S_ISREG(mode))
 		return ("regular file");
 	else if (S_ISSOCK(mode))
 		return ("socket");
 #ifdef S_ISWHT
-	else if (S_ISWHT(mode)) 
+	else if (S_ISWHT(mode))
 		return ("whiteout");
 #endif
 	else
@@ -351,7 +352,7 @@ friendscmp(const struct hast_resource *res0, const struct hast_resource *res1)
 	int nfriends0, nfriends1;
 
 	nfriends0 = nfriends1 = 0;
-	
+
 	TAILQ_FOREACH(friend0, &res0->hr_friends, a_next) {
 		TAILQ_FOREACH(friend1, &res1->hr_friends, a_next) {
 			if (strcmp(friend0->a_addr, friend1->a_addr) == 0)
@@ -383,7 +384,7 @@ resource_needs_restart(const struct hast_resource *res0,
 		if (res0->hr_timeout != res1->hr_timeout)
 			return (true);
 		if (res0->hr_heartbeat_interval != res1->hr_heartbeat_interval)
-			return (true);		
+			return (true);
 		if (remotecmp(res0, res1) != 0)
 			return (true);
 		if (friendscmp(res0, res1) != 0)
@@ -525,7 +526,7 @@ hastmon_reload(void)
 	 * different actions.
 	 *
 	 * We do full resource restart in the following situations:
-	 * Resource role is INIT, SECONDARY or WATCHDOG.	 
+	 * Resource role is INIT, SECONDARY or WATCHDOG.
 	 * Resource role is PRIMARY and path to exec or provider name
 	 * has changed.
 	 * In case of PRIMARY, the worker process will be killed and restarted,
@@ -550,7 +551,7 @@ hastmon_reload(void)
 				pjdlog_info("Resource %s configuration was modified, restarting it.",
 				    cres->hr_name);
 				control_set_role(cres, HAST_ROLE_INIT);
-			} else { 
+			} else {
 				pjdlog_info("Resource %s configuration was modified, reloading it.",
 				    cres->hr_name);
 				strlcpy(cres->hr_exec, nres->hr_exec,
@@ -571,7 +572,7 @@ hastmon_reload(void)
 			control_set_role(nres, role);
 		}
 	}
-	
+
 	yy_config_free(newcfg);
 	pjdlog_info("Configuration reloaded successfully.");
 	return;
@@ -606,7 +607,7 @@ terminate_worker(struct hast_resource *res, int sig)
 	struct timeval timeout;
 	pid_t pid;
 	int status;
-	
+
 	if (kill(res->hr_workerpid, sig) < 0) {
 		pjdlog_errno(LOG_ERR,
 		    "Unable to stop worker process (pid=%u)",
@@ -622,7 +623,7 @@ terminate_worker(struct hast_resource *res, int sig)
 	if (res->hr_event != NULL) {
 		timeout.tv_sec = REPORT_INTERVAL;
 		timeout.tv_usec = 0;
-	
+
 		for (;;) {
 			fd = proto_descriptor(res->hr_event);
 			FD_SET(fd, &rfds);
@@ -770,7 +771,7 @@ listen_accept(void)
 	 * From now on we want to send errors to the remote node.
 	 */
 	nverr = nv_alloc();
-	
+
 	/* Find resource related to this connection. */
 	TAILQ_FOREACH(res, &cfg->hc_resources, hr_next) {
 		if (strcmp(resname, res->hr_name) == 0)
@@ -828,7 +829,7 @@ listen_accept(void)
 				pjdlog_debug(1, "Ignoring complaints because I am %s (not secondary).",
 				    role2str(res->hr_role));
 		}
-		goto close; 
+		goto close;
 	}
 
 	if (remote == NULL) {
@@ -846,7 +847,7 @@ listen_accept(void)
 	if (res->hr_role == HAST_ROLE_PRIMARY) {
 		if (res->hr_priority >= nv_get_int32(nvin, "priority")) {
 			pjdlog_debug(1, "Request has come for resource %s from primary with higher priority (priority number %d, our is %d).",
-			    res->hr_name, nv_get_int32(nvin, "priority"), res->hr_priority);			
+			    res->hr_name, nv_get_int32(nvin, "priority"), res->hr_priority);
 			if (res->hr_workerpid != 0) {
 				pjdlog_debug(1,
 				    "Worker process exists (pid=%u), stopping it.",
@@ -971,6 +972,43 @@ close:
 }
 
 static void
+set_initial_roles()
+{
+	struct hast_resource *res;
+	int oldrole;
+
+	TAILQ_FOREACH(res, &cfg->hc_resources, hr_next) {
+
+		assert(res->hr_role == HAST_ROLE_INIT);
+		assert(res->hr_role_on_start == HAST_ROLE_INIT ||
+		    res->hr_role_on_start == HAST_ROLE_PRIMARY ||
+		    res->hr_role_on_start == HAST_ROLE_SECONDARY ||
+		    res->hr_role_on_start == HAST_ROLE_WATCHDOG);
+
+		pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));
+		pjdlog_info("Role set to %s.", role2str(res->hr_role_on_start));
+
+		if (res->hr_role_on_start == HAST_ROLE_INIT)
+			continue;
+
+		/* Change role to the new one. */
+		oldrole = res->hr_role;
+		res->hr_role = res->hr_role_on_start;
+		pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));
+
+		/* Start worker process if we are changing to primary. */
+		if (res->hr_role == HAST_ROLE_PRIMARY)
+			hastmon_primary(res);
+		/* Start worker process if we are changing to watchdog. */
+		if (res->hr_role == HAST_ROLE_WATCHDOG)
+			hastmon_watchdog(res);
+		pjdlog_prefix_set("%s", "");
+		hook_exec(NULL, res->hr_exec, "role", res->hr_name, role2str(oldrole),
+		    role2str(res->hr_role), NULL);
+	}
+}
+
+static void
 main_loop(void)
 {
 	struct hast_resource *res;
@@ -1012,7 +1050,7 @@ main_loop(void)
 				PJDLOG_ASSERT(!"invalid condition");
 			}
 		}
-		
+
 		/* Setup descriptors for select(2). */
 		FD_ZERO(&rfds);
 		maxfd = fd = proto_descriptor(cfg->hc_controlconn);
@@ -1181,6 +1219,8 @@ main(int argc, char *argv[])
 	}
 
 	hook_init();
+
+	set_initial_roles();
 
 	main_loop();
 
