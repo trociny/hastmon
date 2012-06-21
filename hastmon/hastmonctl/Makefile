@@ -1,7 +1,5 @@
 .PATH:	${.CURDIR}/../hastmon
 
-PREFIX?=	/usr/local
-
 MKC_COMMON_DEFINES.Linux+=	-D_NO_SO_LEN
 
 MKC_CHECK_HEADERS+=	pthread_np.h
