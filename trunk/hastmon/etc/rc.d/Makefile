@@ -1,5 +1,3 @@
-PREFIX?=	/usr/local
-
 SYSTEM!=        uname -s
 
 .if "${SYSTEM}" == "FreeBSD"
