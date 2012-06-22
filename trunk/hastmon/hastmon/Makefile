@@ -43,7 +43,7 @@ MAN=	hastmon.8 hastmon.conf.5
 BINDIR=	${PREFIX}/sbin
 MANDIR=	${PREFIX}/man
 
-CFLAGS+=	-I${.CURDIR}
+CFLAGS+=	-I.
 CFLAGS+=	-DINET
 .if "${MK_INET6_SUPPORT}" != "no"
 CFLAGS+=	-DINET6

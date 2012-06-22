@@ -1,10 +1,8 @@
-SYSTEM!=        uname -s
+.include <mkc.configure.mk>
 
-.if "${SYSTEM}" == "FreeBSD"
-FILES=	hastmon
-
-FILESDIR=	${PREFIX}/etc/rc.d
-FILESMODE=	${BINMODE}
+.if ${TARGET_OPSYS} == "FreeBSD"
+SCRIPTS=	hastmon
+SCRIPTSDIR=	${PREFIX}/etc/rc.d
 .endif
 
 .include <mkc.own.mk>

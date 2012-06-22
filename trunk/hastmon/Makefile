@@ -10,7 +10,4 @@ SUBPRJ+=	etc
 
 MKC_REQD=	0.20.0
 
-.include <mkc.own.mk>
-.include "version.mk"
 .include <mkc.subprj.mk>
-
