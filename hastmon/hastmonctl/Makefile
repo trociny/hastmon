@@ -1,4 +1,4 @@
-.PATH:	${.CURDIR}/../hastmon
+.PATH:	../hastmon
 
 MKC_COMMON_DEFINES.Linux+=	-D_NO_SO_LEN
 
@@ -32,7 +32,7 @@ MAN=	hastmonctl.8
 BINDIR=	${PREFIX}/sbin
 MANDIR=	${PREFIX}/man
 
-CFLAGS+=	-I${.CURDIR}/../hastmon
+CFLAGS+=	-I../hastmon
 CFLAGS+=	-DINET
 .if "${MK_INET6_SUPPORT}" != "no"
 CFLAGS+=	-DINET6
