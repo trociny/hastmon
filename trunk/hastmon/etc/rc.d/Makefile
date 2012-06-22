@@ -5,5 +5,4 @@ SCRIPTS=	hastmon
 SCRIPTSDIR=	${PREFIX}/etc/rc.d
 .endif
 
-.include <mkc.own.mk>
 .include <mkc.prog.mk>
