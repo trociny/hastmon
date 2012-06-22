@@ -50,5 +50,4 @@ YFLAGS+=	-v
 
 CLEANFILES=	y.tab.c y.tab.h y.output _*
 
-.include <mkc.own.mk>
 .include <mkc.prog.mk>
