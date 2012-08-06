@@ -102,15 +102,15 @@ struct hook_caller *
 hook_caller_alloc(struct hast_resource *res, int event)
 {
 	struct hook_caller *caller;
-	
+
 	caller = malloc(sizeof(*caller));
 	if (caller == NULL) {
 		return NULL;
 	}
-	
+
 	caller->hc_magic = HOOKCALLER_MAGIC;
 	caller->hc_res = res;
-	caller->hc_event = event;	
+	caller->hc_event = event;
 
 	return caller;
 }
@@ -120,7 +120,7 @@ hook_caller_free(struct hook_caller *caller)
 {
 	if (caller != NULL) {
 		assert(caller->hc_magic == HOOKCALLER_MAGIC);
-	
+
 		caller->hc_magic = 0;
 		free(caller);
 	}
@@ -199,7 +199,7 @@ hook_find(pid_t pid)
 {
 	struct hookproc *hp;
 
-#ifdef HAVE_MTX_OWNED	
+#ifdef HAVE_MTX_OWNED
 	assert(synch_mtx_owned(&hookprocs_lock));
 #endif
 
@@ -222,7 +222,7 @@ hook_findbycaller(struct hook_caller *caller)
 #ifdef HAVE_MTX_OWNED
 	assert(synch_mtx_owned(&hookprocs_lock));
 #endif
-	
+
 	if (caller == NULL)
 		return NULL;
 
@@ -241,16 +241,15 @@ hook_findbycaller(struct hook_caller *caller)
 }
 
 /*
- * Invalidate callers with hc_res == res in all hooks. 
+ * Invalidate callers with hc_res == res in all hooks.
  */
 void
 hook_invalidate_callers(struct hast_resource *res)
 {
-	
 	struct hookproc *hp;
 
 	synch_mtx_lock(&hookprocs_lock);
-	
+
 	TAILQ_FOREACH(hp, &hookprocs, hp_next) {
 		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
 		assert(hp->hp_pid > 0);
@@ -394,7 +393,7 @@ hook_inform_one(struct hookproc *hp, int status)
 	if (hp->hp_caller != NULL)
 		control_send_event_status(hp->hp_caller->hc_res,
 		    hp->hp_caller->hc_event,
-		    WEXITSTATUS(status));	
+		    WEXITSTATUS(status));
 }
 
 void
@@ -438,7 +437,7 @@ hook_check(void)
 		 * If process doesn't exists we somehow missed it.
 		 * Not much can be done expect for logging this situation.
 		 */
-		if (kill(hp->hp_pid, 0) == -1 && errno == ESRCH) {			
+		if (kill(hp->hp_pid, 0) == -1 && errno == ESRCH) {
 			/*
 			 * On FreeBSD if a child exited but wait() was
 			 * not called, the above kill(pid, 0) would
@@ -451,7 +450,7 @@ hook_check(void)
 				pjdlog_warning("Hook disappeared (pid=%u, cmd=[%s]).",
 				    hp->hp_pid, hp->hp_comm);
 			hook_remove(hp);
-			hook_free(hp);				
+			hook_free(hp);
 			continue;
 		}
 
@@ -511,7 +510,7 @@ hook_execv(struct hook_caller *caller, const char *path, va_list ap)
 		hp = hook_findbycaller(caller);
 		if (hp != NULL) {
 			pjdlog_error("Earlier started hook is still running (pid=%u, cmd=[%s]). Will not start new one.",
-			    hp->hp_pid, hp->hp_comm);		
+			    hp->hp_pid, hp->hp_comm);
 			synch_mtx_unlock(&hookprocs_lock);
 			control_send_event_status(caller->hc_res, caller->hc_event,
 			    HAST_STATE_UNKNOWN);
@@ -528,7 +527,7 @@ hook_execv(struct hook_caller *caller, const char *path, va_list ap)
 	switch (pid) {
 	case -1:	/* Error. */
 		pjdlog_errno(LOG_ERR, "Unable to fork to execute %s", path);
-		hook_free(hp);		
+		hook_free(hp);
 		return;
 	case 0:		/* Child. */
 		descriptors();

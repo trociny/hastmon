@@ -364,10 +364,10 @@ init_remote(struct hast_remote *remote, struct proto_conn **inp,
 
 	PJDLOG_ASSERT((inp == NULL && outp == NULL) || (inp != NULL && outp != NULL));
 	PJDLOG_ASSERT(real_remote(remote));
-	
+
 	in = out = NULL;
 	res = remote->r_res;
-	
+
 	/* Prepare outgoing connection with remote node. */
 	if (proto_client(remote->r_addr, &out) < 0) {
 		primary_exit(EX_TEMPFAIL, "Unable to create connection to %s",
@@ -617,7 +617,7 @@ static void
 remote_close(struct hast_remote *remote, int ncomp)
 {
 	struct hast_resource *res = remote->r_res;
-	
+
 	synch_rw_wlock(&hio_remote_lock[ncomp]);
 	/*
 	 * A race is possible between dropping rlock and acquiring wlock -
@@ -702,7 +702,7 @@ remote_send_thread(void *arg)
 
 	res = remote->r_res;
 	ncomp = remote->r_ncomp;
-	
+
 	for (seq = 1; ; seq++) {
 		pjdlog_debug(2, "remote_send[%u]: Taking request.", ncomp);
 		QUEUE_TAKE1(hio, send, ncomp);
@@ -772,11 +772,11 @@ remote_send_thread(void *arg)
 done_queue:
 		nv_free(nv);
 		pjdlog_debug(2, "remote_send[%u]: (%p) countdown is %d.", ncomp,
-		    hio, hio->hio_countdown);		
+		    hio, hio->hio_countdown);
 		if (!refcount_release(&hio->hio_countdown))
 			continue;
 		pjdlog_debug(2, "remote_send[%u]: (%p) countdown is %d.", ncomp,
-		    hio, hio->hio_countdown);		
+		    hio, hio->hio_countdown);
 		pjdlog_debug(2,
 		    "remote_send[%u]: (%p) Moving request to the done queue.",
 		    ncomp, hio);
@@ -854,7 +854,7 @@ remote_recv_thread(void *arg)
 				break;
 			}
 		}
-		synch_mtx_unlock(&hio_recv_list_lock[ncomp]);		
+		synch_mtx_unlock(&hio_recv_list_lock[ncomp]);
 		if (hio == NULL) {
 			pjdlog_error("Found no request matching received 'seq' field (%ju).",
 			    (uintmax_t)seq);
@@ -886,7 +886,7 @@ done_queue:
 		}
 		pjdlog_debug(2,
 		    "remote_recv[%u]: (%p) countdown is %d.",
-		    ncomp, hio, hio->hio_countdown);		
+		    ncomp, hio, hio->hio_countdown);
 	}
 	/* NOTREACHED */
 	return (NULL);
@@ -938,7 +938,7 @@ heartbeat_end_thread(void *arg)
 			case HAST_STATE_STOPPED:
 			case HAST_STATE_UNKNOWN:
 				res->hr_local_attempts++;
-				if (res->hr_local_attempts > res->hr_local_attempts_max) {					
+				if (res->hr_local_attempts > res->hr_local_attempts_max) {
 					pjdlog_debug(2,
 					    "heartbeat_end: (%p) Resource is %s and exceeded max start attempts %d.",
 					    hio, state2str(res->hr_local_state), res->hr_local_attempts_max);
@@ -971,7 +971,7 @@ heartbeat_end_thread(void *arg)
 			if (res->hr_local_state == HAST_STATE_RUN) {
 				pjdlog_debug(1, "heartbeat_end: (%p) Stopping resource.", hio);
 				event_send(res, EVENT_STOP);
-				synch_mtx_lock(&res->hr_lock);				
+				synch_mtx_lock(&res->hr_lock);
 				res->hr_local_state = HAST_STATE_STOPPING;
 				synch_mtx_unlock(&res->hr_lock);
 			}

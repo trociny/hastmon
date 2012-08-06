@@ -236,7 +236,7 @@ init_environment(struct hast_resource *res)
 
 	synch_mtx_init(&exit_lock);
 	synch_mtx_init(&res->hr_lock);
-	
+
 	/*
 	 * Allocate memory needed by lists.
 	 */
@@ -306,7 +306,7 @@ init_environment(struct hast_resource *res)
 	res->hr_local_state = HAST_STATE_UNKNOWN;
 	TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 		remote->r_state = HAST_STATE_UNKNOWN;
-	
+
 	/*
 	 * Turn on signals handling.
 	 */
@@ -374,7 +374,7 @@ hastmon_watchdog(struct hast_resource *res)
 	pjdlog_init(mode);
 	pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));
 	setproctitle("%s (watchdog)", res->hr_name);
-	
+
 	init_environment(res);
  	/*
 	 * Create the guard thread first, so we can handle signals from the
@@ -483,12 +483,12 @@ remote_send_thread(void *arg)
 
 	res = remote->r_res;
 	ncomp = remote->r_ncomp;
-	
+
 	for (seq = 1; ; seq++) {
 		pjdlog_debug(2, "remote_send[%u]: Taking request.", ncomp);
 		QUEUE_TAKE1(hio, send, ncomp);
 		pjdlog_debug(2, "remote_send[%u]: (%p) Got request.", ncomp, hio);
-		hio->hio_seq = seq;		
+		hio->hio_seq = seq;
 		nv = NULL;
 
 		/* Setup connection... */
@@ -560,13 +560,13 @@ remote_send_thread(void *arg)
 		pjdlog_debug(2, "remote_send[%u]: (%p)   role: %s", ncomp, hio,
 		    role2str(hio->hio_status[ncomp].rs_role));
 		pjdlog_debug(2, "remote_send[%u]: (%p)   rc: %s", ncomp, hio,
-		    nv_get_string(nv, "rc%u", 0));		       
+		    nv_get_string(nv, "rc%u", 0));
 		pjdlog_debug(2, "remote_send[%u]: (%p)   remoteaddr: %s", ncomp, hio,
 		    nv_get_string(nv, "remoteaddr%u", 0));
 		hio->hio_status[ncomp].rs_state = nv_get_uint8(nv, "state%u", 0);
 		pjdlog_debug(2, "remote_send[%u]: (%p)   state: %s", ncomp, hio,
 		    state2str(hio->hio_status[ncomp].rs_state));
-		
+
 close:
 		if (conn != NULL)
 			proto_close(conn);
@@ -603,7 +603,7 @@ heartbeat_end_thread(void *arg)
 		pjdlog_debug(2, "heartbeat_end: Taking request.");
 		QUEUE_TAKE2(hio, done);
 		pjdlog_debug(2, "heartbeat_end: (%p) Got request.", hio);
-		ncomp = 0;		
+		ncomp = 0;
 		if (hio->hio_cmd == HIO_CHECK) {
 			synch_mtx_lock(&res->hr_lock);
 			TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
