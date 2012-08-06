@@ -112,7 +112,7 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 	 * Empty complaints list.
 	 */
 	complaints_clear(res);
-					
+
 	/*
 	 * Create communication channel between parent and child.
 	 */
@@ -190,7 +190,7 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 	init_remote(remote, nvin);
 	error = pthread_create(&td, NULL, respond_thread, remote);
 	PJDLOG_ASSERT(error == 0);
-	event_send(res, EVENT_CONNECT);	
+	event_send(res, EVENT_CONNECT);
 	(void)local_check_thread(res);
 }
 
@@ -255,11 +255,11 @@ respond_thread(void *arg)
 			secondary_exit(EX_TEMPFAIL,
 			    "Unable to receive request header");
 		}
-		
+
 		nvout = nv_alloc();
 		/* Copy sequence number. */
 		nv_add_uint64(nvout, nv_get_uint64(nvin, "seq"), "seq");
-		
+
 		cmd = nv_get_uint8(nvin, "cmd");
 		reqlog(LOG_DEBUG, 2, -1, cmd,
 		       "respond: Got request header: ");
@@ -319,7 +319,7 @@ local_check_thread(void *arg)
 			pjdlog_debug(2, "local_check: Stopping resource.");
 			event_send(res, EVENT_STOP);
 			pjdlog_debug(2, "local_check: Sleeping for %d sec.", res->hr_heartbeat_interval);
-			sleep(res->hr_heartbeat_interval);			
+			sleep(res->hr_heartbeat_interval);
 		} else
 			synch_mtx_unlock(&res->hr_lock);
 	}
