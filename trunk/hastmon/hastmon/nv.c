@@ -559,7 +559,7 @@ nv_get_string(struct nv *nv, const char *namefmt, ...)
 		return (NULL);
 	assert((nvh->nvh_type & NV_ORDER_MASK) == NV_ORDER_HOST);
 	assert(nvh->nvh_dsize >= 1);
-	str = NVH_DATA(nvh);
+	str = (char *)NVH_DATA(nvh);
 	assert(str[nvh->nvh_dsize - 1] == '\0');
 	assert(strlen(str) == nvh->nvh_dsize - 1);
 	return (str);

@@ -328,11 +328,12 @@ control_auth_confirm(struct hastmon_config *cfg, struct nv *nv,
 			if (name == NULL)
 				break;
 			TAILQ_FOREACH(res, &cfg->hc_resources, hr_next) {
-				if (strcmp(res->hr_name, name) == 0)
+				if (strcmp(res->hr_name, name) == 0) {
 					if (!auth_confirm(nv, conn, &res->hr_key))
 						return false;
 					else
 						break;
+				}
 			}
 			if (res == NULL)
 				return false;
@@ -461,7 +462,7 @@ close:
  * (e.g. hook) that was previously started on an event sent by the
  * child.
  */
-void *
+void
 control_send_event_status(struct hast_resource *res, int event, int status)
 {
 	struct nv *cnvout;

@@ -137,14 +137,15 @@ auth_add(struct nv *nv, struct proto_conn *conn, struct hast_auth *key)
 	now = time(NULL);
 	nv_add_uint64(nv, now, "now");
 	make_secret(secret, sizeof(secret), key->au_secret, now, conn, true);
-	
+
 	alg = &algorithm[key->au_algo];
 
 	alg->Init(&ctx);
-	alg->Update(&ctx, secret, strlen(secret));
+	alg->Update(&ctx, (unsigned char *)secret, strlen(secret));
 	alg->Final(hash, &ctx);
 
-	nv_add_uint8_array(nv, hash, alg->digest_length, "auth_hash");
+	nv_add_uint8_array(nv, (uint8_t *)hash, alg->digest_length,
+	    "auth_hash");
 }
 
 bool
@@ -190,7 +191,7 @@ auth_confirm(struct nv *nv, struct proto_conn *conn, struct hast_auth *key)
 	make_secret(secret, sizeof(secret), key->au_secret, then, conn, false);
 
 	alg->Init(&ctx);
-	alg->Update(&ctx, secret, strlen(secret));
+	alg->Update(&ctx, (unsigned char *)secret, strlen(secret));
 	alg->Final(chash, &ctx);
 
 	if (bcmp(rhash, chash, alg->digest_length) != 0) {

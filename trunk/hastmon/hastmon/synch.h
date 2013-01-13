@@ -168,7 +168,7 @@ synch_cv_timedwait(pthread_cond_t *cv, pthread_mutex_t *lock, int timeout)
 	int error;
 
 	if (timeout == 0) {
-		cv_wait(cv, lock);
+		synch_cv_wait(cv, lock);
 		return (false);
 	}
 

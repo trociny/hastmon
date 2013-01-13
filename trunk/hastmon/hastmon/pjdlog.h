@@ -91,7 +91,7 @@ void pjdlog_exitx(int exitcode, const char *fmt, ...) __printflike(2, 3) __dead2
 void pjdlogv_exitx(int exitcode, const char *fmt, va_list ap) __printflike(2, 0) __dead2;
 
 void pjdlog_abort(const char *func, const char *file, int line,
-    const char *failedexpr, const char *fmt, ...) __printflike(5, 6);
+    const char *failedexpr, const char *fmt, ...) __printflike(5, 6) __dead2;
 
 #define	PJDLOG_VERIFY(expr)	do {					\
 	if (!(expr)) {							\

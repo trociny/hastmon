@@ -56,8 +56,9 @@
 #include "hast_proto.h"
 #include "hastmon.h"
 #include "hooks.h"
-#include "proto.h"
+#include "pidfile.h"
 #include "pjdlog.h"
+#include "proto.h"
 #include "refcount.h"
 #include "subr.h"
 #include "synch.h"
@@ -664,9 +665,11 @@ heartbeat_start_thread(void *arg)
 	ncomps = res->hr_remote_cnt;
 
 	for (;;) {
-		pjdlog_debug(2, "heartbeat_start: Sending status event to check local state.", hio);
+		pjdlog_debug(2,
+		    "heartbeat_start: Sending status event to check local state.");
 		event_send(res, EVENT_STATUS);
-		pjdlog_debug(2, "heartbeat_start: Sleeping for %d sec.", res->hr_heartbeat_interval);
+		pjdlog_debug(2, "heartbeat_start: Sleeping for %d sec.",
+		    res->hr_heartbeat_interval);
 		sleep(res->hr_heartbeat_interval);
 		pjdlog_debug(2, "heartbeat_start: Taking free request.");
 		QUEUE_TAKE2(hio, free);
@@ -674,8 +677,11 @@ heartbeat_start_thread(void *arg)
 		for (ii = 0; ii < ncomps; ii++)
 			hio->hio_remote_status[ii].rs_error = EINVAL;
 		refcount_init(&hio->hio_countdown, ncomps);
-		pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.", hio, hio->hio_countdown);
-		pjdlog_debug(2, "heartbeat_start: (%p) Moving request to the send queues.", hio);
+		pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.",
+		    hio, hio->hio_countdown);
+		pjdlog_debug(2,
+		    "heartbeat_start: (%p) Moving request to the send queues.",
+		    hio);
 		/* Move request to remote check threads */
 		for (ii = 0; ii < ncomps; ii++)
 			QUEUE_INSERT1(hio, send, ii);
