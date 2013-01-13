@@ -57,6 +57,7 @@
 #include "hastmon.h"
 #include "hooks.h"
 #include "proto.h"
+#include "pidfile.h"
 #include "subr.h"
 #include "synch.h"
 
@@ -172,7 +173,7 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 	synch_mtx_init(&res->hr_lock);
 
 	/* Error in setting timeout is not critical, but why should it fail? */
-	if (proto_timeout(remote->r_in, 0) < 0)
+	if (proto_timeout(remote->r_in, res->hr_heartbeat_interval * 2) < 0)
 		pjdlog_errno(LOG_WARNING, "Unable to set connection timeout");
 	if (proto_timeout(remote->r_out, res->hr_timeout) < 0)
 		pjdlog_errno(LOG_WARNING, "Unable to set connection timeout");
@@ -278,7 +279,7 @@ respond_thread(void *arg)
 			break;
 		default:
 			pjdlog_error("Header contains invalid 'cmd' (%hhu).",
-			    (unsigned int)cmd);
+			    cmd);
 			nv_add_int16(nvout, EINVAL, "error");
 		}
 		if (nv_error(nvout) != 0) {

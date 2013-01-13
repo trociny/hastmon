@@ -51,7 +51,8 @@ void control_handle(struct hastmon_config *cfg);
 void control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
     struct nv *nvin, bool auth);
 
-void *control_send_event_status(struct hast_resource *res, int event, int status);
+void control_send_event_status(struct hast_resource *res, int event,
+    int status);
 
 void *ctrl_thread(void *arg);
 

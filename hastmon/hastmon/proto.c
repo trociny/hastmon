@@ -296,7 +296,7 @@ proto_connection_send(const struct proto_conn *conn, struct proto_conn *mconn)
 	protoname = mconn->pc_proto->hp_name;
 	PJDLOG_ASSERT(protoname != NULL);
 
-	ret = conn->pc_proto->hp_send(conn->pc_ctx, protoname,
+	ret = conn->pc_proto->hp_send(conn->pc_ctx, (unsigned char *)protoname,
 	    strlen(protoname) + 1, fd);
 	proto_close(mconn);
 	if (ret != 0) {
@@ -323,7 +323,7 @@ proto_connection_recv(const struct proto_conn *conn, bool client,
 
 	bzero(protoname, sizeof(protoname));
 
-	ret = conn->pc_proto->hp_recv(conn->pc_ctx, protoname,
+	ret = conn->pc_proto->hp_recv(conn->pc_ctx, (unsigned char *)protoname,
 	    sizeof(protoname) - 1, &fd);
 	if (ret != 0) {
 		errno = ret;
