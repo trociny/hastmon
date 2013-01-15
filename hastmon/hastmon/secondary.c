@@ -1,7 +1,7 @@
 /*-
  * Copyright (c) 2009-2010 The FreeBSD Foundation
  * Copyright (c) 2010 Pawel Jakub Dawidek <pjd@FreeBSD.org>
- * Copyright (c) 2010 Mikolaj Golub <to.my.trociny@gmail.com>
+ * Copyright (c) 2012 Mikolaj Golub <to.my.trociny@gmail.com>
  * All rights reserved.
  *
  * This software was developed by Mikolaj Golub. The source is derived
