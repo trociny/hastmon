@@ -1,3 +1,13 @@
+hastmon (0.3.1)
+
+  * Fix for the issue 1: the secondary did not failover when the primary
+    lose network, due to timeout not being set on the secondary's heartbeat
+    receive socket (reported and tested by laurencesgill).
+
+  * Cleanup.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2012/01/XX
+
 hastmon (0.3.0)
 
   * Configuration reload.
