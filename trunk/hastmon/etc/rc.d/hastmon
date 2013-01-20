@@ -11,7 +11,8 @@
 . /etc/rc.subr
 
 name="hastmon"
-rcvar=`set_rcvar`
+rcvar=hastmon_enable
+
 pidfile="/var/run/${name}.pid"
 command="/usr/local/sbin/${name}"
 hastmonctl="/usr/local/sbin/hastmonctl"
@@ -24,4 +25,7 @@ hastmon_stop_precmd()
 }
 
 load_rc_config $name
+
+: ${hastmon_enable:="NO"}
+
 run_rc_command "$1"
