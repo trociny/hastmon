@@ -12,6 +12,8 @@ hastmon (0.3.1)
 
   * Make compile with clang without warning.
 
+  * Update FreeBSD rc.d script.
+
 -- Mikolaj Golub <to.my.trociny@gmail.com> 2013/01/20
 
 hastmon (0.3.0)
