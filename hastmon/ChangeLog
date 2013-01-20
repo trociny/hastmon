@@ -1,10 +1,16 @@
 hastmon (0.3.1)
 
-  * Issue 1 fix: the secondary did not failover when the primary
+  * Import from HAST related improvements and bug fixes.
+
+  * Add role_on_start option.
+
+  * Makefile improvements suggested by Aleksey Cheusov.
+
+  * Fix issue 1: the secondary did not failover when the primary
     lose network, due to timeout not being set on the secondary's heartbeat
     receive socket (reported and tested by laurencesgill).
 
-  * Small bugs fixing and make compile with clang without warning.
+  * Make compile with clang without warning.
 
 -- Mikolaj Golub <to.my.trociny@gmail.com> 2013/01/20
 
