@@ -105,7 +105,7 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 	sigset_t mask;
 	pthread_t td;
 	pid_t pid;
-	int error, mode;
+	int error, mode, debuglevel;
 
 	res = remote->r_res;
 
@@ -153,6 +153,7 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 
 	gres = res;
 	mode = pjdlog_mode_get();
+	debuglevel = pjdlog_debug_get();
 
 	/* Declare that we are sender. */
 	proto_send(res->hr_event, NULL, 0);
@@ -163,6 +164,7 @@ hastmon_secondary(struct hast_remote *remote, struct nv *nvin)
 	descriptors_assert(res, remote, mode);
 
 	pjdlog_init(mode);
+	pjdlog_debug_set(debuglevel);
 	pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));
 	setproctitle("%s (secondary)", res->hr_name);
 
