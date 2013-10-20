@@ -437,7 +437,7 @@ heartbeat_start_thread(void *arg)
 			pjdlog_debug(2, "heartbeat_start: (%p) Moving complain request to the send queues.", hio);
 			hio->hio_cmd = HIO_COMPLAINT;
 			refcount_init(&hio->hio_countdown, countdown);
-			pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.", hio, hio->hio_countdown);		
+			pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.", hio, hio->hio_countdown);
 			TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 				if (remote->r_role == HAST_ROLE_SECONDARY)
 					QUEUE_INSERT1(hio, send, remote->r_ncomp);
@@ -458,7 +458,7 @@ heartbeat_start_thread(void *arg)
 			hio->hio_status[ii].rs_error = 0;
 		pjdlog_debug(2, "heartbeat_start: (%p) Moving check request to the send queues.", hio);
 		refcount_init(&hio->hio_countdown, ncomps);
-		pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.", hio, hio->hio_countdown);		
+		pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.", hio, hio->hio_countdown);
 		for (ii = 0; ii < ncomps; ii++)
 			QUEUE_INSERT1(hio, send, ii);
 		sleep(res->hr_heartbeat_interval);
