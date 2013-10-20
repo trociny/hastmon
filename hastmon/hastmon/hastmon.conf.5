@@ -96,7 +96,6 @@ on <node> {
 
 resource <name> {
 	# Resource section
-	rc <path>
 	exec <path>
 	timeout <seconds>
 	attempts <number>
@@ -113,7 +112,7 @@ resource <name> {
 	on <node> {
 		# Resource-node section
 		# Required
-		rc <path>
+		exec <path>
 		# Required
 		remote <addr>
                 priority <number>
@@ -126,7 +125,7 @@ resource <name> {
 	on <node> {
 		# Resource-node section
 		# Required
-		rc <path>
+		exec <path>
 		# Required
 		remote <addr>
                 priority <number>

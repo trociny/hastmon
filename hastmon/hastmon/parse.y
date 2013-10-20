@@ -555,6 +555,7 @@ exec_statement:		EXEC STR
 			}
 			break;
 		case 1:
+		case 2:
 			if (curres == NULL)
 				break;
 			if (strlcpy(curres->hr_exec, $2,
@@ -861,6 +862,8 @@ resource_node_entry:
 	complaint_count_statement
 	|
 	complaint_interval_statement
+	|
+	exec_statement
 	|
 	role_on_start_statement
 	;
