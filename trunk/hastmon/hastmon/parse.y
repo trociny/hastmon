@@ -454,8 +454,11 @@ attempts_statement:	ATTEMPTS NUM
 		case 0:
 			depth0_attempts = $2;
 			break;
-		case 1:
 		case 2:
+			if (!mynode)
+				break;
+			/* FALLTHROUGH */
+		case 1:
 			if (curres != NULL)
 				curres->hr_local_attempts_max = $2;
 			break;
@@ -471,8 +474,11 @@ heartbeat_interval_statement:	HEARTBEAT_INTERVAL NUM
 		case 0:
 			depth0_heartbeat_interval = $2;
 			break;
-		case 1:
 		case 2:
+			if (!mynode)
+				break;
+			/* FALLTHROUGH */
+		case 1:
 			if (curres != NULL)
 				curres->hr_heartbeat_interval = $2;
 			break;
@@ -488,8 +494,11 @@ complaint_count_statement:	COMPLAINT_COUNT NUM
 		case 0:
 			depth0_complaint_count = $2;
 			break;
-		case 1:
 		case 2:
+			if (!mynode)
+				break;
+			/* FALLTHROUGH */
+		case 1:
 			if (curres != NULL)
 				curres->hr_complaint_critical_cnt = $2;
 			break;
@@ -505,8 +514,11 @@ complaint_interval_statement:	COMPLAINT_INTERVAL NUM
 		case 0:
 			depth0_complaint_interval = $2;
 			break;
-		case 1:
 		case 2:
+			if (!mynode)
+				break;
+			/* FALLTHROUGH */
+		case 1:
 			if (curres != NULL)
 				curres->hr_complaint_interval = $2;
 			break;
@@ -522,8 +534,11 @@ role_on_start_statement:	ROLE_ON_START role
 		case 0:
 			depth0_role_on_start = $2;
 			break;
-		case 1:
 		case 2:
+			if (!mynode)
+				break;
+			/* FALLTHROUGH */
+		case 1:
 			if (curres != NULL)
 				curres->hr_role_on_start = $2;
 			break;
@@ -554,8 +569,11 @@ exec_statement:		EXEC STR
 				return (1);
 			}
 			break;
-		case 1:
 		case 2:
+			if (!mynode)
+				break;
+			/* FALLTHROUGH */
+		case 1:
 			if (curres == NULL)
 				break;
 			if (strlcpy(curres->hr_exec, $2,
