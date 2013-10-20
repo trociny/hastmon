@@ -36,7 +36,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <signal.h>
@@ -982,8 +981,8 @@ set_initial_roles()
 
 	TAILQ_FOREACH(res, &cfg->hc_resources, hr_next) {
 
-		assert(res->hr_role == HAST_ROLE_INIT);
-		assert(res->hr_role_on_start == HAST_ROLE_INIT ||
+		PJDLOG_ASSERT(res->hr_role == HAST_ROLE_INIT);
+		PJDLOG_ASSERT(res->hr_role_on_start == HAST_ROLE_INIT ||
 		    res->hr_role_on_start == HAST_ROLE_PRIMARY ||
 		    res->hr_role_on_start == HAST_ROLE_SECONDARY ||
 		    res->hr_role_on_start == HAST_ROLE_WATCHDOG);

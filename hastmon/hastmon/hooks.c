@@ -44,7 +44,6 @@
 #include <sys/sysctl.h>
 #include <sys/wait.h>
 
-#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
@@ -119,7 +118,7 @@ void
 hook_caller_free(struct hook_caller *caller)
 {
 	if (caller != NULL) {
-		assert(caller->hc_magic == HOOKCALLER_MAGIC);
+		PJDLOG_ASSERT(caller->hc_magic == HOOKCALLER_MAGIC);
 
 		caller->hc_magic = 0;
 		free(caller);
@@ -200,12 +199,12 @@ hook_find(pid_t pid)
 	struct hookproc *hp;
 
 #ifdef HAVE_MTX_OWNED
-	assert(synch_mtx_owned(&hookprocs_lock));
+	PJDLOG_ASSERT(synch_mtx_owned(&hookprocs_lock));
 #endif
 
 	TAILQ_FOREACH(hp, &hookprocs, hp_next) {
-		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
-		assert(hp->hp_pid > 0);
+		PJDLOG_ASSERT(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
+		PJDLOG_ASSERT(hp->hp_pid > 0);
 
 		if (hp->hp_pid == pid)
 			break;
@@ -220,15 +219,15 @@ hook_findbycaller(struct hook_caller *caller)
 	struct hookproc *hp;
 
 #ifdef HAVE_MTX_OWNED
-	assert(synch_mtx_owned(&hookprocs_lock));
+	PJDLOG_ASSERT(synch_mtx_owned(&hookprocs_lock));
 #endif
 
 	if (caller == NULL)
 		return NULL;
 
 	TAILQ_FOREACH(hp, &hookprocs, hp_next) {
-		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
-		assert(hp->hp_pid > 0);
+		PJDLOG_ASSERT(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
+		PJDLOG_ASSERT(hp->hp_pid > 0);
 
 		if (hp->hp_caller == NULL)
 			continue;
@@ -251,8 +250,8 @@ hook_invalidate_callers(struct hast_resource *res)
 	synch_mtx_lock(&hookprocs_lock);
 
 	TAILQ_FOREACH(hp, &hookprocs, hp_next) {
-		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
-		assert(hp->hp_pid > 0);
+		PJDLOG_ASSERT(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
+		PJDLOG_ASSERT(hp->hp_pid > 0);
 
 		if (hp->hp_caller == NULL)
 			continue;
@@ -269,7 +268,7 @@ void
 hook_init(void)
 {
 
-	assert(!hooks_initialized);
+	PJDLOG_ASSERT(!hooks_initialized);
 
 	synch_mtx_init(&hookprocs_lock);
 	TAILQ_INIT(&hookprocs);
@@ -281,12 +280,12 @@ hook_fini(void)
 {
 	struct hookproc *hp;
 
-	assert(hooks_initialized);
+	PJDLOG_ASSERT(hooks_initialized);
 
 	synch_mtx_lock(&hookprocs_lock);
 	while ((hp = TAILQ_FIRST(&hookprocs)) != NULL) {
-		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
-		assert(hp->hp_pid > 0);
+		PJDLOG_ASSERT(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
+		PJDLOG_ASSERT(hp->hp_pid > 0);
 
 		hook_remove(hp);
 		hook_free(hp);
@@ -343,8 +342,8 @@ static void
 hook_add(struct hookproc *hp, pid_t pid)
 {
 
-	assert(hp->hp_magic == HOOKPROC_MAGIC_ALLOCATED);
-	assert(hp->hp_pid == 0);
+	PJDLOG_ASSERT(hp->hp_magic == HOOKPROC_MAGIC_ALLOCATED);
+	PJDLOG_ASSERT(hp->hp_pid == 0);
 
 	hp->hp_pid = pid;
 	synch_mtx_lock(&hookprocs_lock);
@@ -357,10 +356,10 @@ static void
 hook_remove(struct hookproc *hp)
 {
 
-	assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
-	assert(hp->hp_pid > 0);
+	PJDLOG_ASSERT(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
+	PJDLOG_ASSERT(hp->hp_pid > 0);
 #ifdef HAVE_MTX_OWNED
-	assert(synch_mtx_owned(&hookprocs_lock));
+	PJDLOG_ASSERT(synch_mtx_owned(&hookprocs_lock));
 #endif
 
 	TAILQ_REMOVE(&hookprocs, hp, hp_next);
@@ -371,8 +370,8 @@ static void
 hook_free(struct hookproc *hp)
 {
 
-	assert(hp->hp_magic == HOOKPROC_MAGIC_ALLOCATED);
-	assert(hp->hp_pid > 0);
+	PJDLOG_ASSERT(hp->hp_magic == HOOKPROC_MAGIC_ALLOCATED);
+	PJDLOG_ASSERT(hp->hp_pid > 0);
 
 	hp->hp_magic = 0;
 	hook_caller_free(hp->hp_caller);
@@ -422,7 +421,7 @@ hook_check(void)
 	time_t now;
 	pid_t pid;
 
-	assert(hooks_initialized);
+	PJDLOG_ASSERT(hooks_initialized);
 
 	/*
 	 * Report about processes that are running for a long time.
@@ -430,8 +429,8 @@ hook_check(void)
 	now = time(NULL);
 	synch_mtx_lock(&hookprocs_lock);
 	TAILQ_FOREACH_SAFE(hp, &hookprocs, hp_next, hp2) {
-		assert(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
-		assert(hp->hp_pid > 0);
+		PJDLOG_ASSERT(hp->hp_magic == HOOKPROC_MAGIC_ONLIST);
+		PJDLOG_ASSERT(hp->hp_pid > 0);
 
 		/*
 		 * If process doesn't exists we somehow missed it.
@@ -490,7 +489,7 @@ hook_execv(struct hook_caller *caller, const char *path, va_list ap)
 	pid_t pid;
 	sigset_t mask;
 
-	assert(hooks_initialized);
+	PJDLOG_ASSERT(hooks_initialized);
 
 	if (path == NULL || path[0] == '\0')
 		return;
@@ -502,7 +501,7 @@ hook_execv(struct hook_caller *caller, const char *path, va_list ap)
 		if (args[ii] == NULL)
 			break;
 	}
-	assert(ii < sizeof(args) / sizeof(args[0]));
+	PJDLOG_ASSERT(ii < sizeof(args) / sizeof(args[0]));
 
 	if (caller != NULL) {
 		hook_check();
