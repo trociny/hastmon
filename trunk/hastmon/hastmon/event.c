@@ -27,7 +27,6 @@
 
 #include <sys/cdefs.h>
 
-#include <assert.h>
 #include <errno.h>
 
 #include "hast.h"
@@ -46,8 +45,8 @@ event_send(struct hast_resource *res, int event)
 	struct nv *nvin, *nvout;
 	int error;
 
-	assert(res != NULL);
-	assert(event >= EVENT_MIN && event <= EVENT_MAX);
+	PJDLOG_ASSERT(res != NULL);
+	PJDLOG_ASSERT(event >= EVENT_MIN && event <= EVENT_MAX);
 
 	nvin = nvout = NULL;
 
@@ -90,7 +89,7 @@ event_recv(struct hast_resource *res)
 	struct hook_caller *caller;
 	int error;
 
-	assert(res != NULL);
+	PJDLOG_ASSERT(res != NULL);
 
 	nvin = nvout = NULL;
 

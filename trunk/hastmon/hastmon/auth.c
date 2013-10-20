@@ -30,7 +30,6 @@
 
 #include <sys/cdefs.h>
 
-#include <assert.h>
 #include <string.h>
 #include <time.h>
 
@@ -56,7 +55,7 @@ typedef int (DIGEST_Final)(char *, void *);
 
 typedef struct Algorithm_t {
 	const char *name;
-	size_t digest_length; 
+	size_t digest_length;
 	DIGEST_Init *Init;
 	DIGEST_Update *Update;
 	DIGEST_Final *Final;
@@ -114,7 +113,7 @@ make_secret(char *buf, size_t size, char *secret, time_t now,
 	len = snprintf(buf, size, "%zu%s%s%s", now, addr1, addr2, secret);
 	pjdlog_debug(2, "secret: %s", buf);
 
-	assert(len < size);
+	PJDLOG_ASSERT(len < size);
 }
 
 void
@@ -126,8 +125,8 @@ auth_add(struct nv *nv, struct proto_conn *conn, struct hast_auth *key)
 	DIGEST_CTX ctx;
 	Algorithm_t *alg;
 
-	assert(key != NULL);
-	assert(key->au_algo >= HAST_AUTH_UNDEF && key->au_algo < HAST_AUTH_MAX);
+	PJDLOG_ASSERT(key != NULL);
+	PJDLOG_ASSERT(key->au_algo >= HAST_AUTH_UNDEF && key->au_algo < HAST_AUTH_MAX);
 
 	if (key->au_algo == HAST_AUTH_UNDEF) {
 		pjdlog_debug(2, "Authentication is not used.");
@@ -155,12 +154,12 @@ auth_confirm(struct nv *nv, struct proto_conn *conn, struct hast_auth *key)
 	char chash[MAX_DIGEST_LENGTH];
 	const unsigned char *rhash;
 	DIGEST_CTX ctx;
-	Algorithm_t *alg;	
+	Algorithm_t *alg;
 	time_t now, then;
 	size_t size;
 
-	assert(key != NULL);
-	assert(key->au_algo >= HAST_AUTH_UNDEF && key->au_algo < HAST_AUTH_MAX);
+	PJDLOG_ASSERT(key != NULL);
+	PJDLOG_ASSERT(key->au_algo >= HAST_AUTH_UNDEF && key->au_algo < HAST_AUTH_MAX);
 
 	if (key->au_algo == HAST_AUTH_UNDEF) {
 		pjdlog_debug(2, "Authentication is not used.");
@@ -168,7 +167,6 @@ auth_confirm(struct nv *nv, struct proto_conn *conn, struct hast_auth *key)
 	}
 
 	alg = &algorithm[key->au_algo];
-	
 	rhash = nv_get_uint8_array(nv, &size, "auth_hash");
 	if (rhash == NULL) {
 		pjdlog_error("Hash is missing.");
@@ -187,7 +185,7 @@ auth_confirm(struct nv *nv, struct proto_conn *conn, struct hast_auth *key)
 		    then, now, MAXDIFTIME);
 		return false;
 	}
-	
+
 	make_secret(secret, sizeof(secret), key->au_secret, then, conn, false);
 
 	alg->Init(&ctx);
@@ -207,9 +205,9 @@ str2algo (const char *str)
 {
 	int ii;
 
-	assert(str != NULL);
-	
-	for (ii = 1; ii < HAST_AUTH_MAX; ii++) 
+	PJDLOG_ASSERT(str != NULL);
+
+	for (ii = 1; ii < HAST_AUTH_MAX; ii++)
 		if (strcmp(str, algorithm[ii].name) == 0)
 			return ii;
 
@@ -221,8 +219,9 @@ str2algo (const char *str)
 void
 auth_add(struct nv *nv, struct proto_conn *conn, struct hast_auth *key)
 {
-	assert(key != NULL);
-	assert(key->au_algo >= HAST_AUTH_UNDEF && key->au_algo < HAST_AUTH_MAX);
+
+	PJDLOG_ASSERT(key != NULL);
+	PJDLOG_ASSERT(key->au_algo >= HAST_AUTH_UNDEF && key->au_algo < HAST_AUTH_MAX);
 
 	return;
 }
@@ -230,9 +229,10 @@ auth_add(struct nv *nv, struct proto_conn *conn, struct hast_auth *key)
 bool
 auth_confirm(struct nv *nv, struct proto_conn *conn, struct hast_auth *key)
 {
-	assert(key != NULL);
-	assert(key->au_algo >= HAST_AUTH_UNDEF && key->au_algo < HAST_AUTH_MAX);
-	
+
+	PJDLOG_ASSERT(key != NULL);
+	PJDLOG_ASSERT(key->au_algo >= HAST_AUTH_UNDEF && key->au_algo < HAST_AUTH_MAX);
+
 	return true;
 }
 

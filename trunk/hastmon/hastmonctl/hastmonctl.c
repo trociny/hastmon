@@ -35,7 +35,6 @@
 #include <sys/stat.h>
 #include <sys/sysctl.h>
 
-#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -247,7 +246,7 @@ main(int argc, char *argv[])
 	pjdlog_debug_set(debug);
 
 	cfg = yy_config_parse(cfgpath, true);
-	assert(cfg != NULL);
+	PJDLOG_ASSERT(cfg != NULL);
 
 	switch (cmd) {
 	case CMD_ROLE:
@@ -281,7 +280,7 @@ main(int argc, char *argv[])
 		}
 		break;
 	default:
-		assert(!"Impossible role!");
+		PJDLOG_ABORT("Impossible role!");
 	}
 
 	/* Setup control connection... */
@@ -325,7 +324,7 @@ main(int argc, char *argv[])
 		error = control_status(nv);
 		break;
 	default:
-		assert(!"Impossible role!");
+		PJDLOG_ABORT("Impossible role!");
 	}
 
 	exit(error);

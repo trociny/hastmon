@@ -43,7 +43,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <assert.h>
 #include <err.h>
 #include <stdio.h>
 #include <string.h>
@@ -229,7 +228,7 @@ yy_config_parse(const char *config, bool exitonerror)
 		    sizeof(lconfig->hc_listenaddr));
 	}
 	TAILQ_FOREACH(curres, &lconfig->hc_resources, hr_next) {
-		assert(TAILQ_FIRST(&curres->hr_remote) != NULL);
+		PJDLOG_ASSERT(TAILQ_FIRST(&curres->hr_remote) != NULL);
 
 		if (curres->hr_timeout == -1) {
 			/*
@@ -396,7 +395,7 @@ control_statement:	CONTROL STR
  			}
  			break;
 		default:
-			assert(!"control at wrong depth level");
+			PJDLOG_ABORT("control at wrong depth level");
 		}
 		free($2);
 	}
@@ -426,7 +425,7 @@ listen_statement:	LISTEN STR
 			}
 			break;
 		default:
-			assert(!"listen at wrong depth level");
+			PJDLOG_ABORT("listen at wrong depth level");
 		}
 		free($2);
 	}
@@ -443,7 +442,7 @@ timeout_statement:	TIMEOUT NUM
 				curres->hr_timeout = $2;
 			break;
 		default:
-			assert(!"timeout at wrong depth level");
+			PJDLOG_ABORT("timeout at wrong depth level");
 		}
 	}
 	;
@@ -463,7 +462,7 @@ attempts_statement:	ATTEMPTS NUM
 				curres->hr_local_attempts_max = $2;
 			break;
 		default:
-			assert(!"attempts at wrong depth level");
+			PJDLOG_ABORT("attempts at wrong depth level");
 		}
 	}
 	;
@@ -483,7 +482,7 @@ heartbeat_interval_statement:	HEARTBEAT_INTERVAL NUM
 				curres->hr_heartbeat_interval = $2;
 			break;
 		default:
-			assert(!"heartbeat_interval at wrong depth level");
+			PJDLOG_ABORT("heartbeat_interval at wrong depth level");
 		}
 	}
 	;
@@ -503,7 +502,7 @@ complaint_count_statement:	COMPLAINT_COUNT NUM
 				curres->hr_complaint_critical_cnt = $2;
 			break;
 		default:
-			assert(!"complaint_count at wrong depth level");
+			PJDLOG_ABORT("complaint_count at wrong depth level");
 		}
 	}
 	;
@@ -523,7 +522,7 @@ complaint_interval_statement:	COMPLAINT_INTERVAL NUM
 				curres->hr_complaint_interval = $2;
 			break;
 		default:
-			assert(!"complaint_interval at wrong depth level");
+			PJDLOG_ABORT("complaint_interval at wrong depth level");
 		}
 	}
 	;
@@ -543,7 +542,7 @@ role_on_start_statement:	ROLE_ON_START role
 				curres->hr_role_on_start = $2;
 			break;
 		default:
-			assert(!"role_on_start at wrong depth level");
+			PJDLOG_ABORT("role_on_start at wrong depth level");
 		}
 	}
 	;
@@ -585,7 +584,7 @@ exec_statement:		EXEC STR
 			}
 			break;
 		default:
-			assert(!"exec at wrong depth level");
+			PJDLOG_ABORT("exec at wrong depth level");
 		}
 		free($2);
 	}
@@ -609,7 +608,7 @@ node_start:	STR
 			mynode = true;
 			break;
 		default:
-			assert(!"invalid isitme() return value");
+			PJDLOG_ABORT("invalid isitme() return value");
 		}
 		free($1);
 	}
@@ -674,7 +673,7 @@ algorithm_statement:		ALGORITHM STR
 			}
 			break;
 		default:
-			assert(!"key at wrong depth level");
+			PJDLOG_ABORT("key at wrong depth level");
 		}
 		free($2);
 	}
@@ -704,7 +703,7 @@ secret_statement:		SECRET STR
 			}
 			break;
 		default:
-			assert(!"key at wrong depth level");
+			PJDLOG_ABORT("key at wrong depth level");
 		}
 		free($2);
 	}
@@ -854,7 +853,7 @@ resource_node_start:	STR
 				mynode = hadmynode = true;
 				break;
 			default:
-				assert(!"invalid isitme() return value");
+				PJDLOG_ABORT("invalid isitme() return value");
 			}
 			free($1);
 		}
@@ -898,9 +897,9 @@ remote_address:		STR
 	{
 		struct hast_remote *remote;
 
-		assert(depth == 2);
+		PJDLOG_ASSERT(depth == 2);
 		if (mynode) {
-			assert(curres != NULL);
+			PJDLOG_ASSERT(curres != NULL);
 			remote = calloc(1, sizeof(*remote));
 			if (remote == NULL) {
 				errx(EX_TEMPFAIL,
@@ -954,7 +953,7 @@ friend_address:		STR
 			break;
 		case 2:
 			if (mynode) {
-				assert(curres != NULL);
+				PJDLOG_ASSERT(curres != NULL);
 				addr = calloc(1, sizeof(*addr));
 				if (addr == NULL) {
 					errx(EX_TEMPFAIL,
@@ -972,14 +971,14 @@ friend_address:		STR
 			}
 			break;
 		default:
-			assert(!"friends at wrong depth level");
+			PJDLOG_ABORT("friends at wrong depth level");
 		}
 	}
 	;
 
 priority_statement:	PRIORITY NUM
 	{
-		assert(depth == 2);
+		PJDLOG_ASSERT(depth == 2);
 		if (mynode) {
 			curres->hr_priority = $2;
 			if (curres->hr_priority < 0) {
