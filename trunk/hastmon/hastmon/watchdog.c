@@ -323,7 +323,7 @@ hastmon_watchdog(struct hast_resource *res)
 {
 	pthread_t td;
 	pid_t pid;
-	int error, mode;
+	int error, mode, debuglevel;
 	struct hast_remote *remote;
 
 	gres = res;
@@ -363,6 +363,7 @@ hastmon_watchdog(struct hast_resource *res)
 
 	gres = res;
 	mode = pjdlog_mode_get();
+	debuglevel = pjdlog_debug_get();
 
 	/* Declare that we are sender. */
 	proto_send(res->hr_event, NULL, 0);
@@ -373,6 +374,7 @@ hastmon_watchdog(struct hast_resource *res)
 	descriptors_assert(res, NULL, mode);
 
 	pjdlog_init(mode);
+	pjdlog_debug_set(debuglevel);
 	pjdlog_prefix_set("[%s] (%s) ", res->hr_name, role2str(res->hr_role));
 	setproctitle("%s (watchdog)", res->hr_name);
 
