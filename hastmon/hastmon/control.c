@@ -138,7 +138,7 @@ control_set_role(struct hast_resource *res, uint8_t role)
 
 static void
 control_status_worker(struct hast_resource *res, struct nv *nvout,
-    unsigned int no)
+    unsigned int no, bool watchdog)
 {
 	struct nv *cnvin, *cnvout;
 	struct hast_remote *remote;
@@ -153,6 +153,8 @@ control_status_worker(struct hast_resource *res, struct nv *nvout,
 	 */
 	cnvout = nv_alloc();
 	nv_add_uint8(cnvout, HASTCTL_STATUS, "cmd");
+	if (watchdog)
+		nv_add_uint8(cnvout, 1, "remote");
 	error = nv_error(cnvout);
 	if (error != 0) {
 		pjdlog_common(LOG_ERR, 0, error,
@@ -211,7 +213,7 @@ end:
 
 static void
 control_status(struct hastmon_config *cfg, struct nv *nvout,
-    struct hast_resource *res, const char *name, unsigned int no)
+    struct hast_resource *res, const char *name, unsigned int no, bool watchdog)
 {
 	struct hast_remote *remote;
 	int cnt;
@@ -267,7 +269,7 @@ control_status(struct hastmon_config *cfg, struct nv *nvout,
 	 * If we are here, it means that we have a worker process, which we
 	 * want to ask some questions.
 	 */
-	control_status_worker(res, nvout, no);
+	control_status_worker(res, nvout, no, watchdog);
 }
 
 void
@@ -344,7 +346,7 @@ control_auth_confirm(struct hastmon_config *cfg, struct nv *nv,
 
 void
 control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
-    struct nv *nvin, bool auth)
+    struct nv *nvin, bool remote)
 {
 
 	struct nv *nvout;
@@ -379,7 +381,7 @@ control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
 		error = EHAST_INVALID;
 		goto fail;
 	}
-	if (auth && !control_auth_confirm(cfg, nvin, conn, str)) {
+	if (remote && !control_auth_confirm(cfg, nvin, conn, str)) {
 		pjdlog_error("Authentication failed.");
 		error = EHAST_AUTHFAILED;
 		goto close;
@@ -412,7 +414,7 @@ control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
 				break;
 			case HASTCTL_STATUS:
 				control_status(cfg, nvout, res, res->hr_name,
-				    ii++);
+				    ii++, remote);
 				break;
 			default:
 				pjdlog_error("Invalid command received (%hhu).",
@@ -434,7 +436,7 @@ control_handle_common(struct hastmon_config *cfg, struct proto_conn *conn,
 				    str, ii);
 				break;
 			case HASTCTL_STATUS:
-				control_status(cfg, nvout, NULL, str, ii);
+				control_status(cfg, nvout, NULL, str, ii, remote);
 				break;
 			default:
 				pjdlog_error("Invalid command received (%hhu).",
@@ -556,6 +558,12 @@ ctrl_thread(void *arg)
 				}
 			nv_add_uint8(nvout, res->hr_local_state, "state");
 			nv_add_uint8(nvout, res->hr_local_attempts, "attempts");
+			/*
+			 * This request was from remote (watchdog) node. Register time
+			 * so we can speculate about network partitioning.
+			 */
+			if (nv_exists(nvin, "remote"))
+				res->hr_remote_lastcheck = time(NULL);
 			synch_mtx_unlock(&res->hr_lock);
 			if (nv_error(nvout) != 0) {
 				pjdlog_error("Unable to create answer on control message.");
