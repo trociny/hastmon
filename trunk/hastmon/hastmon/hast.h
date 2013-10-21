@@ -157,6 +157,9 @@ struct hast_resource {
 	/* Number of attemps after which the resourse is considered failed. */
 	int	hr_local_attempts_max;
 
+	/* Time of the last received STATUS request from a remote (watchdog). */
+	time_t	hr_remote_lastcheck;
+
 	/* Per resource list of addresses that can connect to us. */
 	TAILQ_HEAD(, hast_address) hr_friends;
 
