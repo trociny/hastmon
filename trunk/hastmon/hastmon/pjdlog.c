@@ -86,7 +86,6 @@ pjdlog_mode_set(int mode)
 	assert(pjdlog_initialized);
 	assert(mode == PJDLOG_MODE_STD || mode == PJDLOG_MODE_SYSLOG);
 
-	pjdlog_mode = mode;
 	if (pjdlog_mode == mode)
 		return;
 
