@@ -811,6 +811,7 @@ listen_accept(void)
 
 	if (type == HASTREQ_TYPE_COMPLAINT) {
 		pjdlog_debug(1, "Complaint for %s received.", res->hr_name);
+		proto_close(conn);
 		hook_exec(NULL, res->hr_exec, "complain", res->hr_name, NULL);
 		if (complaints_add(res) > res->hr_complaint_critical_cnt) {
 			pjdlog_debug(1, "Complaint limit for %s reached.", res->hr_name);
@@ -828,7 +829,7 @@ listen_accept(void)
 				pjdlog_debug(1, "Ignoring complaints because I am %s (not secondary).",
 				    role2str(res->hr_role));
 		}
-		goto close;
+		goto free;
 	}
 
 	if (remote == NULL) {
@@ -947,11 +948,7 @@ listen_accept(void)
 		}
 		hastmon_secondary(remote, nvin);
 	}
-	nv_free(nvin);
-	nv_free(nvout);
-	nv_free(nverr);
-	pjdlog_prefix_set("%s", "");
-	return;
+	goto free;
 fail:
 	if (nv_error(nverr) != 0) {
 		pjdlog_common(LOG_ERR, 0, nv_error(nverr),
@@ -963,13 +960,11 @@ fail:
 		goto close;
 	}
 close:
-	if (nvin != NULL)
-		nv_free(nvin);
-	if (nvout != NULL)
-		nv_free(nvout);
-	if (nverr != NULL)
-		nv_free(nverr);
 	proto_close(conn);
+free:
+	nv_free(nvin);
+	nv_free(nvout);
+	nv_free(nverr);
 	pjdlog_prefix_set("%s", "");
 }
 
