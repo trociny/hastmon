@@ -910,24 +910,43 @@ heartbeat_end_thread(void *arg)
 	struct hast_resource *res = arg;
 	struct hast_remote *remote;
 	struct hio *hio;
-	int ret;
+	time_t lastconnected, now;
+	int ret, timeout;
 	char *remote_run;
+
+	timeout = res->hr_complaint_critical_cnt * res->hr_heartbeat_interval;
+	lastconnected = time(NULL);
 
 	for (;;) {
 		pjdlog_debug(2, "heartbeat_end: Taking request.");
 		QUEUE_TAKE2(hio, done);
 		pjdlog_debug(2, "heartbeat_end: (%p) Got request.", hio);
+		now = time(NULL);
+		/*
+		 * Check if at least one remote is connected and update
+		 * lastconnected in this case.
+		 */
+		TAILQ_FOREACH(remote, &res->hr_remote, r_next) {
+			synch_rw_wlock(&hio_remote_lock[remote->r_ncomp]);
+			if (ISCONNECTED(remote, remote->r_ncomp)) {
+				lastconnected = now;
+				synch_rw_unlock(&hio_remote_lock[remote->r_ncomp]);
+				break;
+			}
+			synch_rw_unlock(&hio_remote_lock[remote->r_ncomp]);
+		}
 		synch_mtx_lock(&res->hr_lock);
 		/*
-		 * If no remote (watchdog) status requests have been received
-		 * for long time, the network is likely partitioned.  It is
-		 * safer to stop the service in this case.
+		 * If no remote components have been accessed and no remote
+		 * (watchdog) status requests have been received for long time,
+		 * the network is likely partitioned.  It is safer to stop the
+		 * service in this case.
 		 */
-		if (time(NULL) - res->hr_remote_lastcheck >
-		    res->hr_complaint_critical_cnt * res->hr_heartbeat_interval) {
+		if (now - lastconnected > timeout &&
+		    now - res->hr_remote_lastcheck > timeout) {
 			primary_exitx(EX_UNAVAILABLE,
-			    "No watchdog requests for more than %d sec.",
-			    res->hr_complaint_critical_cnt * res->hr_heartbeat_interval);
+			    "Network silence limit (%d sec) reached.",
+			    timeout);
 		}
 		/*
 		 * Get nodes' status from hio.
