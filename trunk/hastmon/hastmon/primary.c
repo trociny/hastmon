@@ -720,9 +720,7 @@ remote_send_thread(void *arg)
 		nv = nv_alloc();
 		cmd = HIO_STATE;
 		nv_add_uint8(nv, cmd, "cmd");
-		synch_mtx_lock(&res->hr_lock);
 		nv_add_uint8(nv, res->hr_local_state, "state");
-		synch_mtx_unlock(&res->hr_lock);
 		nv_add_uint64(nv, hio->hio_seq, "seq");
 		if (nv_error(nv) != 0) {
 			hio->hio_remote_status[ncomp].rs_error = nv_error(nv);
@@ -960,13 +958,11 @@ heartbeat_end_thread(void *arg)
 			    remote->r_state == HAST_STATE_STARTING)
 				remote_run = remote->r_addr;
 		}
-		synch_mtx_unlock(&res->hr_lock);
 		/*
 		 * Check the resource state and try to restart the
 		 * resource if necessary.
 		 */
 		if (remote_run == NULL) {
-			synch_mtx_lock(&res->hr_lock);
 			switch(res->hr_local_state) {
 			case HAST_STATE_RUN:
 				pjdlog_debug(2,
@@ -1003,18 +999,18 @@ heartbeat_end_thread(void *arg)
 			default:
 				PJDLOG_ASSERT(!"Wrong state.");
 			}
-			synch_mtx_unlock(&res->hr_lock);
 		} else {
 			pjdlog_error("heartbeat_end: (%p) Resource on secondary %s is not STOPPED.",
 			    hio, remote_run);
 			if (res->hr_local_state == HAST_STATE_RUN) {
 				pjdlog_debug(1, "heartbeat_end: (%p) Stopping resource.", hio);
-				event_send(res, EVENT_STOP);
-				synch_mtx_lock(&res->hr_lock);
 				res->hr_local_state = HAST_STATE_STOPPING;
 				synch_mtx_unlock(&res->hr_lock);
+				event_send(res, EVENT_STOP);
+				synch_mtx_lock(&res->hr_lock);
 			}
 		}
+		synch_mtx_unlock(&res->hr_lock);
 		pjdlog_debug(2, "heartbeat_end: (%p) Moving request to the free queue.", hio);
 		QUEUE_INSERT2(hio, free);
 	}
