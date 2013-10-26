@@ -129,6 +129,7 @@ control_set_role(struct nv *nv, const char *newrole)
 static int
 control_status(struct nv *nv)
 {
+	pid_t pid;
 	unsigned int ii, jj;
 	const char *str, *str1;
 	int error, role, ret;
@@ -149,6 +150,9 @@ control_status(struct nv *nv)
 		}
 		role = nv_get_uint8(nv, "role%u", ii);
 		printf("  role: %s\n", role2str(role));
+		pid = nv_get_int32(nv, "workerpid%u", ii);
+		if (pid != 0)
+			printf("  workerpid: %d\n", pid);
 		printf("  exec: %s\n",
 		    nv_get_string(nv, "exec%u", ii));
 		printf("  remote:");
