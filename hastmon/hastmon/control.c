@@ -243,6 +243,7 @@ control_status(struct hastmon_config *cfg, struct nv *nvout,
 		    no, remote->r_ncomp);
 	}
 	nv_add_uint8(nvout, res->hr_role, "role%u", no);
+	nv_add_int32(nvout, res->hr_workerpid, "workerpid%u", no);
 	cnt = complaints_cnt(res);
 	nv_add_int32(nvout, cnt, "complaints%u", no);
 	nv_add_int32(nvout, res->hr_complaint_critical_cnt,
