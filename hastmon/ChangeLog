@@ -1,3 +1,21 @@
+hastmon (0.3.2)
+
+  * Fix some hastmon.conf parsing issues.
+
+  * Improve logging.
+
+  * Fix issue 2: in the primary, detect network partitioning and switch
+    to the secondary/init to prevent a split-brain (reported and tested by
+    laurencesgill).
+
+  * Fix socket leak on spawning the primary worker.
+
+  * Show worker pid in hastmonctl status output.
+
+  * Cleanup.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2013/XX/XX
+
 hastmon (0.3.1)
 
   * Import from HAST related improvements and bug fixes.
