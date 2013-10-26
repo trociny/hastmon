@@ -163,13 +163,13 @@ control_status(struct nv *nv)
 			printf("\n    %s", str);
 			switch (role) {
 			case HAST_ROLE_PRIMARY:
-			case HAST_ROLE_SECONDARY:			
+			case HAST_ROLE_SECONDARY:
 				str = nv_get_string(nv, "remotestate%u.%u", ii, jj);
 				if (str == NULL)
 					break;
 				printf(" (%s)", str);
 				break;
-			case HAST_ROLE_WATCHDOG:			
+			case HAST_ROLE_WATCHDOG:
 				str = nv_get_string(nv, "remoterole%u.%u", ii, jj);
 				if (str == NULL)
 					break;
