@@ -8,13 +8,14 @@ hastmon (0.3.2)
     to the secondary/init to prevent a split-brain (reported and tested by
     laurencesgill).
 
-  * Fix socket leak on spawning the primary worker.
+  * Fix socket leak on spawning the primary worker (reported and tested by
+    laurencesgill).
 
   * Show worker pid in hastmonctl status output.
 
   * Cleanup.
 
--- Mikolaj Golub <to.my.trociny@gmail.com> 2013/XX/XX
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2013/10/30
 
 hastmon (0.3.1)
 
