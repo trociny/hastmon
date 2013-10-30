@@ -1,0 +1,155 @@
+.\" Copyright (c) 2010 The FreeBSD Foundation
+.\" Copyright (c) 2010 Mikolaj Golub <to.my.trociny@gmail.com>
+.\" All rights reserved.
+.\"
+.\" This software was developed by Mikolaj Golub. The source is derived
+.\" from HAST developed by Pawel Jakub Dawidek under sponsorship from
+.\" the FreeBSD Foundation.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.Dd October 20, 2010
+.Dt HASTMONCTL 8
+.Os
+.Sh NAME
+.Nm hastmonctl
+.Nd "hastmon control utility"
+.Sh SYNOPSIS
+.Nm
+.Cm create
+.Op Fl d
+.Op Fl c Ar config
+.Op Fl e Ar extentsize
+.Op Fl k Ar keepdirty
+.Op Fl m Ar mediasize
+.Ar name ...
+.Nm
+.Cm role
+.Op Fl d
+.Op Fl c Ar config
+.Aq init | primary | secondary
+.Ar all | name ...
+.Nm
+.Cm status
+.Op Fl d
+.Op Fl c Ar config
+.Op Ar all | name ...
+.Nm
+.Cm dump
+.Op Fl d
+.Op Fl c Ar config
+.Op Ar all | name ...
+.Sh DESCRIPTION
+The
+.Nm
+utility is used to control the behaviour of the
+.Xr hastmon 8
+daemon.
+.Pp
+This utility should be used to setup initial hastmon resources role
+and check the resources' current status.
+.Pp
+The first argument to
+.Nm
+indicates an action to be performed:
+.Bl -tag -width ".Cm status"
+.It Cm role
+Change role of the given resource.
+The role can be one of:
+.Bl -tag -width ".Cm secondary"
+.It Cm init
+Resource is turned off.
+.It Cm primary
+The resource will be started and run on this node.
+.It Cm secondary
+Local
+.Xr hastmon 8
+daemon will act as secondary node for the given resource - it will wait
+for connection from the primary node and will handle requests
+received from it.
+Also it will receive complaints from watchdog and initiate switching
+to primary if there are complaints and no connection from primary.
+.It Cm status
+Present status of the configured resources.
+.El
+.Pp
+In addition, every subcommand can be followed by the following options:
+.Bl -tag -width ".Fl c Ar config"
+.It Fl c Ar config
+Specify alternative location of the configuration file.
+The default location is
+.Pa /usr/local/etc/hastmon.conf .
+.It Fl d
+Print debugging information.
+This option can be specified multiple times to raise the verbosity
+level.
+.El
+.Sh FILES
+.Bl -tag -width ".Pa /var/run/hastmonctl" -compact
+.It Pa /usr/local/etc/hastmon.conf
+Configuration file for
+.Nm
+and
+.Xr hastmon 8 .
+.It Pa /var/run/hastmonctl
+Control socket used by
+.Nm
+to communicate with the
+.Xr hastmon 8
+daemon.
+.El
+.Sh EXIT STATUS
+Exit status is 0 on success, or one of the values described in
+.Xr sysexits 3
+on failure.
+.Sh EXAMPLES
+Run shared resource on nodeA (primary) and nodeB (secondary) and
+start watchdog on nodeC. 
+.Bd -literal -offset indent
+nodeB# hastmon
+nodeB# hastmonctl role secondary shared
+
+nodeA# hastmon
+nodeA# hastmonctl role primary shared
+
+nodeC# hastmon
+nodeC# hastmonctl role watchdog shared
+
+.Ed
+.Pp
+Switch roles for the
+.Nm shared
+resource.
+.Bd -literal -offset indent
+nodeA# hastmonctl role secondary shared
+
+nodeB# hastmonctl role primary shared
+.Ed
+.Sh SEE ALSO
+.Xr sysexits 3 ,
+.Xr hastmon.conf 5 ,
+.Xr hastmon 8 .
+.Sh AUTHORS
+The
+.Nm
+was developed by
+.An Mikolaj Golub Aq to.my.trociny@gmail.com .

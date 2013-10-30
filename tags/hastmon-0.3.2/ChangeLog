@@ -1,0 +1,67 @@
+hastmon (0.3.2)
+
+  * Fix some hastmon.conf parsing issues.
+
+  * Improve logging.
+
+  * Fix issue 2: in the primary, detect network partitioning and switch
+    to the secondary/init to prevent a split-brain (reported and tested by
+    laurencesgill).
+
+  * Fix socket leak on spawning the primary worker (reported and tested by
+    laurencesgill).
+
+  * Show worker pid in hastmonctl status output.
+
+  * Cleanup.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2013/10/30
+
+hastmon (0.3.1)
+
+  * Import from HAST related improvements and bug fixes.
+
+  * Add role_on_start option.
+
+  * Makefile improvements suggested by Aleksey Cheusov.
+
+  * Fix issue 1: the secondary did not failover when the primary
+    lose network, due to timeout not being set on the secondary's heartbeat
+    receive socket (reported and tested by laurencesgill).
+
+  * Make compile with clang without warning.
+
+  * Update FreeBSD rc.d script.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2013/01/20
+
+hastmon (0.3.0)
+
+  * Configuration reload.
+
+  * Authentication by key.
+
+  * Build using mk-configure.
+
+  * Port to Linux (tested on Debian 5.0) and NetBSD (5.1). So currently
+    hastmon can be run at least on 3 platforms (FreeBSD, NetBSD, and
+    Linux).
+
+  * Bug fixes and small updates.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2011/01/15
+
+hastmon (0.2.0)
+
+  * Bug fixes, cleaning up, tuning. It looks like hastmon is ready for
+    production usage, well, at least it is beta :-).
+
+  * Small updates from HAST.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2010/11/22
+
+hastmon (0.1.0)
+
+  * Alpha.
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2010/10/22
