@@ -1,0 +1,984 @@
+Below is an example of hastmon controlling stacked HAST -- data are written to 4 nodes (lolek, bolek, chuk and gek) and are accessible on one of the nodes as /dev/hast/upper:
+
+```
+ /dev/hast/upper
+        |
+        P------------upper-------------S
+        |         172.20.68.30         |
+ /dev/hast/lower                /dev/hast/lower
+        |                              |
+        P-----lower----S               P----lower-----S
+        | 172.20.68.31 |               | 172.20.68.32 |
+     /dev/ad4       /dev/ad4        /dev/ad4       /dev/ad4
+  
+      lolek          bolek            chuk           gek
+```
+
+On upper device we create ZFS and install a jail (VIMAGE), so we can switch the jail between 4 hosts. The virtual host will be accessible by IP 172.20.70.2.
+
+When everything is set up, you can start the virtual host with the comnand:
+
+```
+./manage.sh start
+```
+
+This should start vm on lolek host. You can switch vm to another host running:
+
+```
+./manage.sh switch gek
+```
+
+Below are configuration details.
+
+hast.conf on all nodes looks like below:
+
+```
+exec /etc/vip.sh
+
+resource lower {
+
+	local /dev/ad4
+
+	on lolek {
+		remote bolek
+	}
+
+	on bolek {
+		remote lolek
+	}
+
+	on chuk {
+		remote gek
+	}
+
+	on gek {
+		remote chuk
+	}
+}
+
+resource upper {
+
+	local /dev/hast/lower
+	# XXX: HAST should be patched to know friends 
+	friends lolek bolek chuk gek
+
+	on lolek {
+		remote 172.20.68.32
+	}
+
+	on bolek {
+		remote 172.20.68.32
+	}
+
+	on chuk {
+		remote 172.20.68.31
+	}
+
+	on gek {
+		remote 172.20.68.31
+	}
+}
+```
+
+As it is noted in the comment above, hastd should be patched with [this patch](http://hastmon.googlecode.com/files/hastd.friends.1.patch): current version of hastd allows only connections from addresses specified as remote.
+
+/etc/vip.sh script handles virtual IPs (172.20.68.31 or 172.20.68.32 for lower resource and 172.20.68.30 for upper resource) when a resource appears/disappears on a node:
+
+```
+#!/bin/sh
+
+IF=em0
+UPPERIP=172.20.68.30
+case $(hostname -s) in
+    lolek|bolek) 
+        LOWERIP=172.20.68.31
+        ;;
+    chuk|gek)
+        LOWERIP=172.20.68.32
+        ;;
+    *)
+        echo "Unknonwn host: $(hostname -s)" >&2
+        exit 1
+        ;;
+esac
+ 
+
+role ()
+{
+    resource="$1"
+    oldrole="$2"
+    newrole="$3"
+
+    case "${resource}" in
+        lower)
+            ip="${LOWERIP}"
+            ;;
+        upper)
+            ip="${UPPERIP}"
+            ;;
+        *)
+            exit 0
+            ;;
+    esac
+
+    if [ "${newrole}" = primary ]; then
+        /sbin/ifconfig "${IF}" alias "${ip}" netmask 0xffffffff
+    else
+        /sbin/ifconfig "${IF}" -alias "${ip}" netmask 0xffffffff
+    fi
+}
+
+case $1 in
+    role)
+        shift
+        role $@
+        ;;
+    connect|disconnect|syncstart|syncdone|syncintr|split-brain)
+        exit 0
+        ;;
+    *)
+        echo "usage: $0 role|connect|disconnect|syncstart|syncdone|syncintr|split-brain"
+        exit 1
+        ;;
+esac
+
+```
+
+For hastmon wee need 5th node -- reksio, which is used as watchdog.
+
+hastmon setup diagram:
+
+```
+        
+        P--------------S-----upper-----S--------------S
+        |              |               |              |
+        P----lower1----S               P----lower2----S
+        |              |               |              |
+      lolek          bolek            chuk           gek
+      -----          -----            ----           ----
+      HAST           HAST             HAST           HAST
+                             reksio                      
+                             ------                      
+                            WATCHDOG
+```
+
+hastmon.conf (used by all nodes):
+```
+resource lower1 {
+
+	exec /etc/lower.sh
+	friends lolek bolek chuk gek reksio
+	# As we use 3 watchdogs, increase default complaint count
+	complaint_count 10
+
+	on lolek {
+		remote bolek
+		priority 0
+        }
+
+	on bolek {
+		remote lolek
+		priority 1
+        }
+
+	# chuk, gek, and reksio are used as watchdogs for this resource
+
+	on chuk {
+		remote lolek bolek
+        }
+
+	on gek {
+		remote lolek bolek
+        }
+
+	on reksio {
+		remote lolek bolek
+        }
+}
+
+resource lower2 {
+ 
+	exec /etc/lower.sh
+	friends lolek bolek chuk gek reksio
+	# As we use 3 watchdogs, increase default complaint count
+	complaint_count 10
+
+	on chuk {
+		remote gek
+		priority 0
+        }
+
+	on gek {
+		remote chuk
+		priority 1
+        }
+
+	# lolek, bolek, and reksio are used as watchdogs for this resource
+
+	on lolek {
+		remote chuk gek
+        }
+
+	on bolek {
+		remote chuk gek
+        }
+
+	on reksio {
+		remote chuk gek
+        }
+}
+
+resource upper { 
+
+	exec /etc/upper.sh
+	friends lolek bolek chuk gek reksio
+
+	on lolek {
+		remote bolek chuk gek
+		priority 0
+        }
+
+	on bolek {
+		remote lolek chuk gek
+		priority 1
+        }
+
+	on chuk {
+		remote lolek bolek gek
+		priority 2
+        }
+
+	on gek {
+		remote lolek bolek chuk
+		priority 4
+        }
+
+	# reksio is use as watchdog for this resource
+
+	on reksio {
+		remote lolek bolek chuk gek
+        }
+}
+```
+
+Resource are managed by lower.sh and upper.sh script.
+
+/etc/lower.sh:
+
+```
+#!/bin/sh
+
+PROV=lower
+DEV="/dev/hast/${PROV}"
+
+RUN=0
+STOPPED=1
+UNKNOWN=2
+
+script=$0
+progname=$(basename $0)
+
+start()
+{
+    logger -p local0.debug -t "${progname}[$$]" "Starting $PROV..."
+    # Check if hastd is started and start if it is not.
+    /etc/rc.d/hastd onestatus >/dev/null 2>&1 || /etc/rc.d/hastd onestart
+
+    # If there is secondary worker process, it means that remote primary process is
+    # still running. We have to wait for it to terminate.
+    for i in `jot 30`; do
+        pgrep -f "hastd: ${PROV} \(secondary\)" >/dev/null 2>&1 || break
+        sleep 1
+    done
+    if pgrep -f "hastd: ${PROV} \(secondary\)" >/dev/null 2>&1; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "Secondary process for resource ${PROV} is still running after 30 seconds."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" "Secondary process in not running."
+
+    # Change role to primary for our resource.
+    out=`hastctl role primary "${PROV}" 2>&1`
+    if [ $? -ne 0 ]; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "Unable to change to role to primary for resource ${PROV}: ${out}."
+        exit 1
+    fi
+
+    # Wait few seconds for provider to appear.
+    for i in `jot 50`; do
+        [ -c "${DEV}" ] && break
+        sleep 0.1
+    done
+    if [ ! -c "${DEV}" ]; then
+        logger -p local0.error -t "${progname}[$$]" "Device ${DEV} didn't appear."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" "Role for resource ${prov} changed to primary."
+}
+
+stop()
+{
+    logger -p local0.debug -t "${progname}[$$]" "Stopping $PROV..."
+
+    # Kill start script if it still runs in the background.
+    sig="TERM"
+    for i in `jot 30`; do
+        pgid=`pgrep -f "${script} start" | head -1`
+        [ -n "${pgid}" ] || break
+        kill -${sig} -- -${pgid}
+        sig="KILL"
+        sleep 1
+    done
+    if [ -n "${pgid}" ]; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "'${script} start' process for resource ${PROV} is still running after 30 seconds."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" "'${script} start' is not running."
+
+    /etc/rc.d/hastd onestatus >/dev/null 2>&1 || /etc/rc.d/hastd onestart /dev/null 2>&1
+
+    # Change role to secondary for our resource.
+    out=`hastctl role secondary "${PROV}" 2>&1`
+    if [ $? -ne 0 ]; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "Unable to change to role to secondary for resource ${PROV}: ${out}."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" \
+	"Role for resource ${PROV} changed to secondary."
+
+    logger -p local0.info -t "${progname}[$$]" \
+	"Successfully switched to secondary for resource ${PROV}."
+}
+
+status()
+{
+    hastctl status "${PROV}" |
+    grep -q '^ *role: *primary *$' &&
+    test -c "${DEV}" &&
+    return ${RUN}
+ 
+    hastctl status "${PROV}" |
+    grep -q '^ *role: *secondary *$' && 
+    return ${STOPPED}
+    
+    return ${UNKNOWN}
+}
+
+case $1 in
+    start)
+	start
+	;;
+    stop)
+	stop
+	;;
+    status)
+	status
+	;;
+    role|connect|disconnect|complain)
+	exit 0
+	;;
+    *)
+	echo "usage: $0 stop|start|status|role|connect|disconnect|complain"
+	exit 1
+	;;
+esac
+```
+
+/etc/upper.sh:
+
+```
+#!/bin/sh
+
+LPROV=lower
+LDEV="/dev/hast/${LPROV}"
+PROV=upper
+DEV="/dev/hast/${PROV}"
+POOL=hast
+FS=hast
+MOUNTPOINT=/hast
+JAIL=hast
+JAILHOSTNAME=hast.kopusha.home.net
+
+# Jail network configuration. It is route based (rather than bridge)
+# because I had issues setting bridge. So with below settings on hosts
+# where you want to access jail you have to run: 
+#   route add 172.21.70.0/30 172.20.68.30
+# The jail will be accessible by 172.20.70.2.
+IF=em0
+IP=172.20.68.30
+EPAIR=epair10
+IPa=172.20.70.1
+IPb=172.20.70.2
+
+RUN=0
+STOPPED=1
+UNKNOWN=2
+
+script=$0
+progname=$(basename $0)
+
+start()
+{
+    logger -p local0.debug -t "${progname}[$$]" "Starting $PROV..."
+
+    # If there is secondary worker process, it means that remote primary process is
+    # still running. We have to wait for it to terminate.
+    for i in `jot 30`; do
+        pgrep -f "hastd: ${PROV} \(secondary\)" >/dev/null 2>&1 || break
+        sleep 1
+    done
+    if pgrep -f "hastd: ${PROV} \(secondary\)" >/dev/null 2>&1; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "Secondary process for resource ${PROV} is still running after 30 seconds."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" "Secondary process in not running."
+
+    # Check lower device. We use hastmon for this
+    hastmonctl role primary "${LPROV}"
+    # Wait few seconds for provider to appear.
+    for i in `jot 50`; do
+        [ -c "${LDEV}" ] && break
+        sleep 0.2
+    done
+    if [ ! -c "${LDEV}" ]; then
+        logger -p local0.error -t "${progname}[$$]" "Device ${LDEV} didn't appear."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" "Role for resource ${LPROV} changed to primary."
+
+    # Change role to primary for our resource.
+    out=`hastctl role primary "${PROV}" 2>&1`
+    if [ $? -ne 0 ]; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "Unable to change to role to primary for resource ${PROV}: ${out}."
+        exit 1
+    fi
+
+    # Wait few seconds for provider to appear.
+    for i in `jot 50`; do
+        [ -c "${DEV}" ] && break
+        sleep 0.1
+    done
+    if [ ! -c "${DEV}" ]; then
+        logger -p local0.error -t "${progname}[$$]" "Device ${DEV} didn't appear."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" "Role for resource ${PROV} changed to primary."
+
+    # Import ZFS pool. Do it forcibly as it remembers hostid of the
+    # other cluster node. Before import we check current status of
+    # zfs: it might be that the script is called second time by
+    # hastmon (because not all operations were successful on the first
+    # run) and zfs is already here.
+
+    zpool list | egrep -q "^${POOL} "
+    if [ $? -ne 0 ]; then
+	out=`zpool import -f "${POOL}" 2>&1`
+	if [ $? -ne 0 ]; then
+            logger -p local0.error -t "${progname}[$$]" \
+		"ZFS pool import for resource ${PROV} failed: ${out}."
+            exit 1
+	fi
+	logger -p local0.debug -t "${progname}[$$]" "ZFS pool for resource ${PROV} imported."
+    fi
+
+    zfs mount | egrep -q "^${FS} "
+    if [ $? -ne 0 ]; then
+	out=`zfs mount "${FS}" 2>&1`
+	if [ $? -ne 0 ]; then
+            logger -p local0.error -t "${progname}[$$]" \
+		"ZFS mount for ${FS} failed: ${out}."
+            exit 1
+	fi
+	logger -p local0.debug -t "${progname}[$$]" "ZFS {$FS} mounted."
+    fi
+
+    mount | egrep -q "^devfs on ${MOUNTPOINT}/dev"
+    if [ $? -ne 0 ]; then
+	out=`mount -t devfs devfs "${MOUNTPOINT}/dev" 2>&1`
+	if [ $? -ne 0 ]; then
+            logger -p local0.error -t "${progname}[$$]" \
+		"Mounting devfs for jail ${JAIL} failed: ${out}."
+            exit 1
+	fi
+	logger -p local0.debug -t "${progname}[$$]" "devfs for jail {$JAIL} mounted."
+    fi
+    
+    out=`jail -i -c name="${JAIL}" host.hostname="${JAILHOSTNAME}" vnet persist path="${MOUNTPOINT}"`
+    if [ $? -ne 0 ]; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "Failed to create jail ${JAIL}: ${out}."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" "Jail {$JAIL} created."
+    
+    out=`sysctl -w net.inet.ip.forwarding=1 >/dev/null 2>&1;
+         ifconfig "${IF}" alias "${IP}" netmask 0xffffffff 2>&1;
+         ifconfig "${EPAIR}" create 2>&1;
+         ifconfig "${EPAIR}b" vnet "${JAIL}" 2>&1;
+         ifconfig "${EPAIR}a" inet "${IPa}"/30 up 2>&1;
+         jexec "${JAIL}" ifconfig "${EPAIR}b" inet "${IPb}"/30 up 2>&1;
+         jexec "${JAIL}" route add default "${IPa}" 2>&1`
+    if [ $? -ne 0 ]; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "Failed to configure network for jail ${JAIL}: ${out}."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" "Network for jail {$JAIL} configured."  
+
+    jexec "${JAIL}" sh /etc/rc.jail >/dev/null 2>&1
+
+    logger -p local0.debug -t "${progname}[$$]" "Resource ${PROV} started."
+}
+
+stop()
+{
+    logger -p local0.debug -t "${progname}[$$]" "Stopping $PROV..."
+
+    # Kill start script if it still runs in the background.
+    sig="TERM"
+    for i in `jot 30`; do
+        pgid=`pgrep -f "${script} start" | head -1`
+        [ -n "${pgid}" ] || break
+        kill -${sig} -- -${pgid}
+        sig="KILL"
+        sleep 1
+    done
+    if [ -n "${pgid}" ]; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "'${script} start' process for resource ${PROV} is still running after 30 seconds."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" "'${script} start' is not running."
+
+    jail -r "${JAIL}" >/dev/null 2>&1
+    sleep 0.5 # XXX: to avoid race between jail -r and ifconfig destroy
+    ifconfig "${EPAIR}a" destroy >/dev/null 2>&1
+    umount "${MOUNTPOINT}/dev" >/dev/null 2>&1
+    ifconfig "${IF}" -alias "${IP}" netmask 0xffffffff >/dev/null 2>&1
+
+    logger -p local0.debug -t "${progname}[$$]" \
+	"Jail ${JAIL} destroyed."    
+
+    if /etc/rc.d/hastd onestatus >/dev/null 2>&1; then
+	zpool list | egrep -q "^${POOL} "
+	if [ $? -eq 0 ]; then
+            # Forcibly export file pool.
+            out=`zpool export -f "${POOL}" 2>&1`
+            if [ $? -ne 0 ]; then
+		logger -p local0.error -t "${progname}[$$]" \
+		    "Unable to export pool for resource ${PROV}: ${out}."
+		exit 1
+            fi
+	    logger -p local0.debug -t "${progname}[$$]" \
+		"ZFS pool for resource ${PROV} exported."
+	fi
+    else
+	out=`/etc/rc.d/hastd onestart 2>&1`
+	if [ $? -ne 0 ]; then
+            logger -p local0.error -t "${progname}[$$]" \
+		"Unable to start hastd: ${out}."
+	fi
+    fi
+
+    # Change role to secondary for our resource.
+    out=`hastctl role secondary "${PROV}" 2>&1`
+    if [ $? -ne 0 ]; then
+        logger -p local0.error -t "${progname}[$$]" \
+	    "Unable to change to role to secondary for resource ${PROV}: ${out}."
+        exit 1
+    fi
+    logger -p local0.debug -t "${progname}[$$]" \
+	"Role for resource ${PROV} changed to secondary."
+
+    hastmonctl role secondary "${LPROV}"
+
+    logger -p local0.info -t "${progname}[$$]" \
+	"Successfully switched to secondary for resource ${PROV}."
+}
+
+status()
+{
+    hastctl status "${PROV}" |
+    grep -q '^ *role: *primary *$' && 
+    zfs list "${POOL}" > /dev/null 2>&1 &&
+    mount | grep -q "${MOUNTPOINT}" &&
+    jls -j "${JAIL}" > /dev/null &&
+    return ${RUN}
+ 
+    hastctl status "${PROV}" |
+    grep -q '^ *role: *secondary *$' && 
+    return ${STOPPED}
+    
+    return ${UNKNOWN}
+}
+
+case $1 in
+    start)
+	start
+	;;
+    stop)
+	stop
+	;;
+    status)
+	status
+	;;
+    role|connect|disconnect|complain)
+	exit 0
+	;;
+    *)
+	echo "usage: $0 stop|start|status|role|connect|disconnect|complain"
+	exit 1
+	;;
+esac
+```
+
+To manage this setup (start/stop hastmon, move the virtual host to another host) the following script manage.sh can be used:
+
+```
+#!/bin/sh
+
+PAIR1="lolek bolek"
+PAIR2="chuk gek"
+WATCHDOGS="reksio"
+STATUSCMD="sudo /etc/upper.sh status"
+
+ALL="${PAIR1} ${PAIR2} ${WATCHDOGS}"
+SRC=/usr/src
+HASTMONSRC="${SRC}/hastmon/hastmon"
+
+inlist ()
+{
+    local e el list 
+    el="${1}"
+    list="${2}"
+
+    for e in ${list}; do
+	test "${e}" = "${el}" && return 0
+    done
+    return 1;
+}
+
+start ()
+{ 
+    local lower wlower
+
+    echo "Starting hastmon on remote hosts..."
+    for h in ${ALL}; do
+	echo "Setting ${h}..."
+	if inlist "${h}" "${WATCHDOGS}"; then
+	    ssh ${h} \
+		"sudo /usr/local/etc/rc.d/hastmon onestart;
+                 sudo hastmonctl role watchdog all;"
+	else
+	    if inlist "${h}" "${PAIR1}"; then
+		lower=lower1
+		wlower=lower2
+	    else
+		lower=lower2
+		wlower=lower1
+	    fi
+	    ssh ${h} \
+		"sudo /usr/local/etc/rc.d/hastmon onestart;
+                 sudo hastmonctl role watchdog ${wlower};
+                 sudo hastmonctl role secondary ${lower} upper;"
+	fi
+	echo "done."
+  done
+}
+
+stop ()
+{
+    echo "Stopping hastmon on remote hosts..."
+    for h in ${ALL}; do
+	echo $h
+	ssh ${h} sudo /usr/local/etc/rc.d/hastmon onestop
+    done
+}
+
+restart ()
+{
+    stop
+    sleep 1
+    start
+}
+
+status ()
+{
+    for h in ${ALL}; do
+	echo "== ${h}: =="
+	ssh ${h} sudo hastmonctl status
+	echo
+    done
+}
+
+update ()
+{
+    local clean
+
+    clean=clean
+    test -n "$UPDATELIGHT" && clean=''
+
+    for h in ${ALL}; do
+	echo "Building on ${h}..."
+    	ssh ${h} "cd '${HASTMONSRC}' && make ${clean} all"
+	echo "Done."
+	break
+    done
+
+    echo "Installing on  all hosts..."
+    for h in ${ALL}; do
+	echo "== ${h}: =="
+	ssh ${h} "cd '${HASTMONSRC}' && sudo make install"
+	echo
+    done
+    echo "Done."
+}
+
+update_hast ()
+{
+    local clean
+
+    clean=clean
+    test -n "$UPDATELIGHT" && clean=''
+
+    for h in ${PAIR1}; do
+	echo "Building on ${h}..."
+    	ssh ${h} \
+	    "cd '${SRC}/sbin/hastd'   && sudo make ${clean} all &&
+             cd '${SRC}/sbin/hastctl' && sudo make ${clean} all"
+	echo "Done."
+	break
+    done
+
+    echo "Installing on  all hosts..."
+    for h in ${PAIR1} ${PAIR2}; do
+	echo "== ${h}: =="
+    	ssh ${h} \
+	    "cd '${SRC}/sbin/hastd'   && sudo make install &&
+             cd '${SRC}/sbin/hastctl' && sudo make install"
+	echo
+    done
+    echo "Done."
+}
+
+switch ()
+{
+    local host lower
+    host="${1}"
+
+    # Check current status of the host
+    
+    if ssh ${host} "${STATUSCMD}"; then
+	echo "Jail has already been running on ${h}."
+	exit
+    fi 
+
+    echo "Switching all hosts to secondary..."    
+    for h in ${PAIR1} ${PAIR2}; do
+	echo "Setting ${h}..."
+	if inlist "${h}" "${PAIR1}"; then
+	    lower=lower1
+	else
+	    lower=lower2
+	fi
+	ssh ${h} \
+	    "sudo hastmonctl role secondary ${lower} upper"
+	echo "done."
+    done
+
+    echo "Switching ${host} to primary..."    
+    if inlist "${host}" "${PAIR1}"; then
+	lower=lower1
+    else
+	lower=lower2
+    fi
+    ssh ${host} \
+	"sudo hastmonctl role primary ${lower} upper;"
+    echo "done."
+    
+}
+
+deploy ()
+{
+    local src dst
+    src=$1
+    dst=$2
+    for h in ${ALL}; do
+	echo "Deploying ${src} to ${h}:${dst}"
+	ssh ${h} "sudo sh -c 'cat > ${dst}'" < "${src}"
+    done
+}
+
+usage ()
+{
+	echo "usage: $0 stop|start|restart|status|update|update_hast" >&2
+	echo "usage: $0 switch host" >&2
+	echo "usage: $0 deploy <src> <dst>" >&2
+	exit 1
+}
+
+case $1 in
+    start)
+	start
+	;;
+    stop)
+	stop
+	;;
+    restart)
+	restart
+	;;
+    status)
+	status
+	;;
+    update)
+	update
+	;;
+    update_hast)
+	update_hast
+	;;
+    switch)
+	shift
+	[ -n "$1" ] || usage
+	switch $@
+	;;
+    deploy)
+	shift
+	[ -n "$2" ] || usage	
+	deploy $@
+	;;
+    *)
+	usage
+	;;
+esac
+```
+
+Typical hastctl and hastmonctl status outputs on the nodes:
+
+```
+lolek# hastctl status
+lower:
+  role: primary
+  provname: lower
+  localpath: /dev/ad4
+  extentsize: 2097152
+  keepdirty: 64
+  remoteaddr: bolek
+  replication: memsync
+  status: complete
+  dirty: 0 bytes
+upper:
+  role: primary
+  provname: upper
+  localpath: /dev/hast/lower
+  extentsize: 2097152
+  keepdirty: 64
+  remoteaddr: 172.20.68.32
+  replication: memsync
+  status: complete
+  dirty: 0 bytes
+
+lolek# hastmonctl status
+lower1:
+  role: primary
+  exec: /etc/lower.sh
+  remoteaddr: bolek(connected)
+  state: run
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 10)
+  heartbeat: 10 sec
+lower2:
+  role: watchdog
+  exec: /etc/lower.sh
+  remoteaddr: chuk(primary/run) gek(secondary/stopped)
+  state: run
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 10)
+  heartbeat: 10 sec
+upper:
+  role: primary
+  exec: /etc/upper.sh
+  remoteaddr: bolek(connected) chuk(connected) gek(connected)
+  state: run
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 3)
+  heartbeat: 10 sec
+
+chuk# hastctl status
+lower:
+  role: primary
+  provname: lower
+  localpath: /dev/ad4
+  extentsize: 2097152
+  keepdirty: 64
+  remoteaddr: gek
+  replication: memsync
+  status: complete
+  dirty: 0 bytes
+upper:
+  role: secondary
+  provname: upper
+  localpath: /dev/hast/lower
+  extentsize: 2097152
+  keepdirty: 0
+  remoteaddr: 172.20.68.31
+  replication: memsync
+  status: complete
+  dirty: 0 bytes
+
+chuk# hastmonctl status
+lower1:
+  role: watchdog
+  exec: /etc/lower.sh
+  remoteaddr: lolek(primary/run) bolek(secondary/stopped)
+  state: run
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 10)
+  heartbeat: 10 sec
+lower2:
+  role: primary
+  exec: /etc/lower.sh
+  remoteaddr: gek(connected)
+  state: run
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 10)
+  heartbeat: 10 sec
+upper:
+  role: secondary
+  exec: /etc/upper.sh
+  remoteaddr: lolek(connected) bolek(disconnected) gek(disconnected)
+  state: stopped
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 3)
+  heartbeat: 10 sec
+
+reksio# hastmonctl status
+lower1:
+  role: watchdog
+  exec: /etc/lower.sh
+  remoteaddr: lolek(primary/run) bolek(secondary/stopped)
+  state: run
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 10)
+  heartbeat: 10 sec
+lower2:
+  role: watchdog
+  exec: /etc/lower.sh
+  remoteaddr: chuk(primary/run) gek(secondary/stopped)
+  state: run
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 10)
+  heartbeat: 10 sec
+upper:
+  role: watchdog
+  exec: /etc/upper.sh
+  remoteaddr: lolek(primary/run) bolek(secondary/stopped) chuk(secondary/stopped) gek(secondary/stopped)
+  state: run
+  attempts: 0 from 5
+  complaints: 0 for last 60 sec (threshold 3)
+  heartbeat: 10 sec
+```
