@@ -1,3 +1,9 @@
+hastmon (0.3.3)
+
+  * Fix build on newer FreeBSD (use refcnt.h from FreeBSD's hastd).
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2020/01/06
+
 hastmon (0.3.2)
 
   * Fix some hastmon.conf parsing issues.
