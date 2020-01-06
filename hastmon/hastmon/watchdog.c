@@ -56,7 +56,7 @@
 #include "pidfile.h"
 #include "pjdlog.h"
 #include "proto.h"
-#include "refcount.h"
+#include "refcnt.h"
 #include "subr.h"
 #include "synch.h"
 
@@ -438,7 +438,7 @@ heartbeat_start_thread(void *arg)
 			res->hr_local_state = HAST_STATE_UNKNOWN;
 			pjdlog_debug(2, "heartbeat_start: (%p) Moving complain request to the send queues.", hio);
 			hio->hio_cmd = HIO_COMPLAINT;
-			refcount_init(&hio->hio_countdown, countdown);
+			refcnt_init(&hio->hio_countdown, countdown);
 			pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.", hio, hio->hio_countdown);
 			TAILQ_FOREACH(remote, &res->hr_remote, r_next)
 				if (remote->r_role == HAST_ROLE_SECONDARY)
@@ -459,7 +459,7 @@ heartbeat_start_thread(void *arg)
 		for (ii = 0; ii < ncomps; ii++)
 			hio->hio_status[ii].rs_error = 0;
 		pjdlog_debug(2, "heartbeat_start: (%p) Moving check request to the send queues.", hio);
-		refcount_init(&hio->hio_countdown, ncomps);
+		refcnt_init(&hio->hio_countdown, ncomps);
 		pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.", hio, hio->hio_countdown);
 		for (ii = 0; ii < ncomps; ii++)
 			QUEUE_INSERT1(hio, send, ii);
@@ -576,7 +576,7 @@ close:
 		if (nv != NULL)
 			nv_free(nv);
 		pjdlog_debug(2, "remote_send[%u]: (%p) countdown is %d.", ncomp, hio, hio->hio_countdown);		
-		if (!refcount_release(&hio->hio_countdown))
+		if (!refcnt_release(&hio->hio_countdown))
 			continue;
 		pjdlog_debug(2, "remote_send[%u]: (%p) countdown is %d.", ncomp, hio, hio->hio_countdown);		
 		pjdlog_debug(2,

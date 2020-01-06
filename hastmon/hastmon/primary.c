@@ -59,7 +59,7 @@
 #include "pidfile.h"
 #include "pjdlog.h"
 #include "proto.h"
-#include "refcount.h"
+#include "refcnt.h"
 #include "subr.h"
 #include "synch.h"
 
@@ -679,7 +679,7 @@ heartbeat_start_thread(void *arg)
 		pjdlog_debug(2, "heartbeat_start: (%p) Got free request.", hio);
 		for (ii = 0; ii < ncomps; ii++)
 			hio->hio_remote_status[ii].rs_error = EINVAL;
-		refcount_init(&hio->hio_countdown, ncomps);
+		refcnt_init(&hio->hio_countdown, ncomps);
 		pjdlog_debug(2, "heartbeat_start: (%p) Countdown is %d.",
 		    hio, hio->hio_countdown);
 		pjdlog_debug(2,
@@ -780,7 +780,7 @@ done_queue:
 		nv_free(nv);
 		pjdlog_debug(2, "remote_send[%u]: (%p) countdown is %d.", ncomp,
 		    hio, hio->hio_countdown);
-		if (!refcount_release(&hio->hio_countdown))
+		if (!refcnt_release(&hio->hio_countdown))
 			continue;
 		pjdlog_debug(2, "remote_send[%u]: (%p) countdown is %d.", ncomp,
 		    hio, hio->hio_countdown);
@@ -885,7 +885,7 @@ remote_recv_thread(void *arg)
 		hio->hio_remote_status[ncomp].rs_error = 0;
 		nv_free(nv);
 done_queue:
-		if (refcount_release(&hio->hio_countdown)) {
+		if (refcnt_release(&hio->hio_countdown)) {
 			pjdlog_debug(2,
 			    "remote_recv[%u]: (%p) Moving request to the done queue.",
 			    ncomp, hio);

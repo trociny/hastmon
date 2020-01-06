@@ -1,6 +1,7 @@
 /*-
- * Copyright (c) 2010 Mikolaj Golub <to.my.trociny@gmail.com>
- * All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
+ * Copyright (c) 2005 John Baldwin <jhb@FreeBSD.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,10 +12,10 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -23,54 +24,41 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Inefficient implementation of refcount.
+ * $FreeBSD$
  */
 
-#ifndef _REFCOUNT_H_
-#define _REFCOUNT_H_
+#ifndef __REFCNT_H__
+#define __REFCNT_H__
 
-#ifdef _HAVE_SYS_REFCOUNT_H
-#include <sys/refcount.h>
-#else /* ! _HAVE_SYS_REFCOUNT_H */
+#include <machine/atomic.h>
 
-#include <stdbool.h>
+#include "pjdlog.h"
 
-#include "synch.h"
-
-static pthread_mutex_t _refcount_lock;
+typedef unsigned int refcnt_t;
 
 static __inline void
-refcount_init(volatile u_int *count, u_int value)
+refcnt_init(refcnt_t *count, unsigned int v)
 {
-	static bool initialised = false;
 
-	if (!initialised) {
-		synch_mtx_init(&_refcount_lock);
-		initialised = true;
-	}
-
-	*count = value;
+	*count = v;
 }
 
 static __inline void
-refcount_acquire(volatile u_int *count)
+refcnt_acquire(refcnt_t *count)
 {
 
-	synch_mtx_lock(&_refcount_lock);
-	(*count)++;
-	synch_mtx_unlock(&_refcount_lock);
+	atomic_add_acq_int(count, 1);
 }
 
-static __inline int
-refcount_release(volatile u_int *count)
+static __inline unsigned int
+refcnt_release(refcnt_t *count)
 {
+	unsigned int old;
 
-	synch_mtx_lock(&_refcount_lock);
-	(*count)--;
-	synch_mtx_unlock(&_refcount_lock);
-	return (*count == 0);
+	/* XXX: Should this have a rel membar? */
+	old = atomic_fetchadd_int(count, -1);
+	PJDLOG_ASSERT(old > 0);
+	return (old - 1);
 }
 
-#endif	/* _HAVE_SYS_REFCOUNT_H */
-
-#endif	/* ! _REFCOUNT_H_ */
+#endif	/* ! __REFCNT_H__ */
