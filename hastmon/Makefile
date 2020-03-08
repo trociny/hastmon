@@ -48,8 +48,6 @@ CFLAGS+=	-DINET
 .if "${MK_INET6_SUPPORT}" != "no"
 CFLAGS+=	-DINET6
 .endif
-# This is needed to have WARNS > 1.
-CFLAGS+=	-DYY_NO_UNPUT
 
 LDADD=	-lpthread
 .if "${MK_OPENSSL}" != "no"

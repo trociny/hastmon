@@ -43,6 +43,10 @@ int lineno;
 #define	DP	do { } while (0)
 %}
 
+%option noinput
+%option nounput
+%option noyywrap
+
 %%
 control			{ DP; return CONTROL; }
 listen			{ DP; return LISTEN; }
