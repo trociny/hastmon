@@ -1,3 +1,9 @@
+hastmon (0.3.4)
+
+  * Make build with mk-configure-0.34 (get rid of libl dependency).
+
+-- Mikolaj Golub <to.my.trociny@gmail.com> 2020/03/08
+
 hastmon (0.3.3)
 
   * Fix build on newer FreeBSD (use refcnt.h from FreeBSD's hastd).
